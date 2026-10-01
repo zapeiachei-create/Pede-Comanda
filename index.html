@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#7b0f1b">
+<title>Pede Comanda</title>
+<style>
+:root{--wine:#7b0f1b;--wine2:#a4162a;--bg:#f7f3f1;--card:#fff;--text:#211d1d;--muted:#746b6b;--line:#eadfdb}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#4d0710,var(--wine));color:#fff;padding:14px;display:flex;align-items:center;gap:10px;box-shadow:0 5px 18px #40081833}
+.mark{width:44px;height:44px;border:2px solid #fff;border-radius:13px;display:grid;place-items:center;font-weight:900}.logo{width:44px;height:44px;border-radius:13px;background:#fff;object-fit:cover;padding:2px}
+main{max-width:720px;margin:auto;padding:14px 12px 36px}.sheet{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 45px #5a07151a}
+.intro{padding:16px;background:linear-gradient(135deg,#6a0b18,var(--wine2));color:#fff}.intro h1{font-size:22px;margin:0 0 4px}.intro p{margin:0;opacity:.9}
+.body{padding:13px}.cat{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:11px}.cat h3{margin:0;background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;padding:10px 12px;font-size:13px}
+.row{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;padding:12px;border-top:1px solid var(--line)}.name{font-weight:800}.price{color:var(--muted);font-size:14px;margin-top:3px}
+.qty{display:flex;align-items:center;justify-content:flex-end;gap:6px}.qty button{width:32px;height:32px;border:0;border-radius:8px;background:#f6e3e7;color:var(--wine);font-size:18px;font-weight:900}.qty b{min-width:22px;text-align:center}
+.field{margin-top:12px}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:6px}.field input,.field textarea{width:100%;border:1px solid #dfd1cd;border-radius:11px;padding:12px;background:#fff;font:inherit}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}.total{display:flex;justify-content:space-between;align-items:end;border-top:1px dashed #dbc9c5;margin-top:13px;padding-top:12px}.total strong{font-size:30px;color:var(--wine)}
+.send{width:100%;border:0;border-radius:13px;padding:15px;margin-top:12px;background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;font-size:17px;font-weight:900}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px}.center{text-align:center}.ok{font-size:54px}.err{color:#8b1c2c;background:#fff1f3;border:1px solid #f1c5cd;padding:12px;border-radius:12px}.loader{min-height:70vh;display:grid;place-items:center}
+</style>
+</head>
+<body>
+<div id="app"><div class="loader">Abrindo sua comanda...</div></div>
+<script>
+const SB='https://aajpumelbbgutmeackuu.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhanB1bWVsYmJndXRtZWFja3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzUwODQsImV4cCI6MjA3NTAxMTA4NH0.6SoJ0vQy5F33IOeVjMllxPv7SlST6dpaGJMlvPceLVk';
+const QR=new URLSearchParams(location.search).get('qr')||'';
+let ctx=null,qty={};
+const esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
+async function rpc(n,b){const r=await fetch(SB+'/rest/v1/rpc/'+n,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify(b)});const t=await r.text();let d=null;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(d?.message||d||'Erro ao processar pedido');return d}
+function products(){return (ctx?.categories||[]).flatMap(c=>c.products||[])}
+function total(){return products().reduce((a,p)=>a+Number(p.price)*(qty[p.id]||0),0)}
+function snapshot(){return {customer:document.getElementById('customer')?.value||'',phone:document.getElementById('phone')?.value||'',notes:document.getElementById('notes')?.value||''}}
+function change(id,d){const s=snapshot();qty[id]=Math.max(0,(qty[id]||0)+d);render(s)}
+function normalizePhone(v){let d=String(v||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d}
+function render(saved={}){
+ document.documentElement.style.setProperty('--wine',ctx.theme_color||'#7b0f1b');
+ document.getElementById('app').innerHTML=
+ '<header>'+(ctx.logo_url?'<img class="logo" src="'+esc(ctx.logo_url)+'">':'<div class="mark">PC</div>')+
+ '<div><b style="font-size:18px">'+esc(ctx.business_name)+'</b><div style="opacity:.82">Pede Comanda • '+esc(ctx.table_name)+'</div></div></header>'+
+ '<main><div class="sheet"><div class="intro"><h1>'+esc(ctx.table_name)+'</h1><p>Escolha seus itens e envie direto para a cozinha. Sem cadastro.</p></div><div class="body">'+
+ (ctx.categories||[]).map(c=>'<section class="cat"><h3>'+esc(c.name)+'</h3>'+(c.products||[]).map(p=>'<div class="row"><div><div class="name">'+esc(p.name)+'</div><div class="price">'+money(p.price)+'</div></div><div class="qty"><button onclick="change(\''+p.id+'\',-1)">−</button><b>'+(qty[p.id]||0)+'</b><button onclick="change(\''+p.id+'\',1)">+</button></div></div>').join('')+'</section>').join('')+
+ '<div class="field"><label>Seu nome</label><input id="customer" placeholder="Ex.: João" value="'+esc(saved.customer||'')+'"><div class="hint">Usado apenas para identificar o pedido.</div></div>'+
+ '<div class="field"><label>WhatsApp (opcional)</label><input id="phone" inputmode="tel" placeholder="(21) 99999-9999" value="'+esc(saved.phone||'')+'"><div class="hint">Não cria conta. Serve apenas para contato deste pedido.</div></div>'+
+ '<div class="field"><label>Observações</label><textarea id="notes" rows="3" placeholder="Ex.: sem cebola, carne bem passada...">'+esc(saved.notes||'')+'</textarea></div>'+
+ '<div class="total"><span>Total</span><strong>'+money(total())+'</strong></div>'+
+ '<button class="send" onclick="sendOrder()">Enviar pedido para a cozinha</button></div></div></main>';
+}
+async function sendOrder(){
+ const items=Object.entries(qty).filter(([,q])=>q>0).map(([product_id,qty])=>({product_id,qty}));
+ if(!items.length)return alert('Selecione pelo menos um item.');
+ const customer=(document.getElementById('customer')?.value||'').trim();
+ const rawPhone=document.getElementById('phone')?.value||'';
+ const phone=normalizePhone(rawPhone);
+ if(rawPhone.trim() && phone.length<12)return alert('Digite um WhatsApp válido ou deixe em branco.');
+ const notes=(document.getElementById('notes')?.value||'').trim();
+ try{
+  const r=await rpc('pc_place_qr_order',{p_qr_token:QR,p_items:items,p_notes:notes||null,p_customer_name:customer||null,p_customer_whatsapp:phone||null});
+  qty={};
+  document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">✅</div><h1>Pedido enviado!</h1><p>Seu pedido <b>#'+esc(r.order_no)+'</b> já chegou na cozinha.</p><h2>'+money(r.total)+'</h2><button class="send" onclick="render()">Fazer outro pedido</button></div></main>';
+ }catch(e){alert(e.message)}
+}
+(async()=>{if(!QR){document.getElementById('app').innerHTML='<main><div class="card"><h2>Pede Comanda</h2><div class="err">Este link precisa do QR de uma mesa.</div></div></main>';return}try{ctx=await rpc('pc_qr_bootstrap',{p_qr_token:QR});render()}catch(e){document.getElementById('app').innerHTML='<main><div class="card"><h2>Comanda indisponível</h2><div class="err">'+esc(e.message)+'</div></div></main>'}})();
+</script>
+</body>
+</html>
