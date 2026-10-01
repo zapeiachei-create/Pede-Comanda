@@ -19,6 +19,9 @@ main{max-width:720px;margin:auto;padding:14px 12px 36px}.sheet{background:#fff;b
 .hint{font-size:12px;color:var(--muted);margin-top:5px}.total{display:flex;justify-content:space-between;align-items:end;border-top:1px dashed #dbc9c5;margin-top:13px;padding-top:12px}.total strong{font-size:30px;color:var(--wine)}
 .send{width:100%;border:0;border-radius:13px;padding:15px;margin-top:12px;background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;font-size:17px;font-weight:900}
 .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px}.center{text-align:center}.ok{font-size:54px}.err{color:#8b1c2c;background:#fff1f3;border:1px solid #f1c5cd;padding:12px;border-radius:12px}.loader{min-height:70vh;display:grid;place-items:center}
+.ticket{font-size:64px;line-height:1;font-weight:1000;color:var(--wine);letter-spacing:2px;margin:8px 0}.ticket-label{font-size:13px;font-weight:900;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase}
+.notice{background:#f7e4e7;border:1px solid #ecc3cc;padding:11px;border-radius:12px;color:#6e1421;margin:12px 0}
+@media(max-width:420px){.row{grid-template-columns:1fr 96px}.intro h1{font-size:20px}}
 </style>
 </head>
 <body>
@@ -26,7 +29,10 @@ main{max-width:720px;margin:auto;padding:14px 12px 36px}.sheet{background:#fff;b
 <script>
 const SB='https://aajpumelbbgutmeackuu.supabase.co';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhanB1bWVsYmJndXRtZWFja3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzUwODQsImV4cCI6MjA3NTAxMTA4NH0.6SoJ0vQy5F33IOeVjMllxPv7SlST6dpaGJMlvPceLVk';
-const QR=new URLSearchParams(location.search).get('qr')||'';
+const params=new URLSearchParams(location.search);
+const QR=params.get('qr')||'';
+const STORE=params.get('loja')||params.get('balcao')||'';
+let mode=QR?'table':(STORE?'counter':'');
 let ctx=null,qty={};
 const esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
@@ -36,14 +42,17 @@ function total(){return products().reduce((a,p)=>a+Number(p.price)*(qty[p.id]||0
 function snapshot(){return {customer:document.getElementById('customer')?.value||'',phone:document.getElementById('phone')?.value||'',notes:document.getElementById('notes')?.value||''}}
 function change(id,d){const s=snapshot();qty[id]=Math.max(0,(qty[id]||0)+d);render(s)}
 function normalizePhone(v){let d=String(v||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d}
+function locationLabel(){return mode==='counter'?'Balcão / Retirada':ctx.table_name}
 function render(saved={}){
  document.documentElement.style.setProperty('--wine',ctx.theme_color||'#7b0f1b');
  document.getElementById('app').innerHTML=
  '<header>'+(ctx.logo_url?'<img class="logo" src="'+esc(ctx.logo_url)+'">':'<div class="mark">PC</div>')+
- '<div><b style="font-size:18px">'+esc(ctx.business_name)+'</b><div style="opacity:.82">Pede Comanda • '+esc(ctx.table_name)+'</div></div></header>'+
- '<main><div class="sheet"><div class="intro"><h1>'+esc(ctx.table_name)+'</h1><p>Escolha seus itens e envie direto para a cozinha. Sem cadastro.</p></div><div class="body">'+
+ '<div><b style="font-size:18px">'+esc(ctx.business_name)+'</b><div style="opacity:.82">Pede Comanda • '+esc(locationLabel())+'</div></div></header>'+
+ '<main><div class="sheet"><div class="intro"><h1>'+esc(locationLabel())+'</h1><p>'+
+ (mode==='counter'?'Faça seu pedido e receba uma senha para retirada. Sem cadastro.':'Escolha seus itens e envie direto para a cozinha. Sem cadastro.')+
+ '</p></div><div class="body">'+
  (ctx.categories||[]).map(c=>'<section class="cat"><h3>'+esc(c.name)+'</h3>'+(c.products||[]).map(p=>'<div class="row"><div><div class="name">'+esc(p.name)+'</div><div class="price">'+money(p.price)+'</div></div><div class="qty"><button onclick="change(\''+p.id+'\',-1)">−</button><b>'+(qty[p.id]||0)+'</b><button onclick="change(\''+p.id+'\',1)">+</button></div></div>').join('')+'</section>').join('')+
- '<div class="field"><label>Seu nome</label><input id="customer" placeholder="Ex.: João" value="'+esc(saved.customer||'')+'"><div class="hint">Usado apenas para identificar o pedido.</div></div>'+
+ '<div class="field"><label>Seu nome'+(mode==='counter'?' *':'')+'</label><input id="customer" placeholder="Ex.: João" value="'+esc(saved.customer||'')+'"><div class="hint">'+(mode==='counter'?'Necessário para chamar seu pedido.':'Usado apenas para identificar o pedido.')+'</div></div>'+
  '<div class="field"><label>WhatsApp (opcional)</label><input id="phone" inputmode="tel" placeholder="(21) 99999-9999" value="'+esc(saved.phone||'')+'"><div class="hint">Não cria conta. Serve apenas para contato deste pedido.</div></div>'+
  '<div class="field"><label>Observações</label><textarea id="notes" rows="3" placeholder="Ex.: sem cebola, carne bem passada...">'+esc(saved.notes||'')+'</textarea></div>'+
  '<div class="total"><span>Total</span><strong>'+money(total())+'</strong></div>'+
@@ -53,17 +62,32 @@ async function sendOrder(){
  const items=Object.entries(qty).filter(([,q])=>q>0).map(([product_id,qty])=>({product_id,qty}));
  if(!items.length)return alert('Selecione pelo menos um item.');
  const customer=(document.getElementById('customer')?.value||'').trim();
+ if(mode==='counter'&&!customer)return alert('Informe seu nome para identificarmos sua retirada.');
  const rawPhone=document.getElementById('phone')?.value||'';
  const phone=normalizePhone(rawPhone);
  if(rawPhone.trim() && phone.length<12)return alert('Digite um WhatsApp válido ou deixe em branco.');
  const notes=(document.getElementById('notes')?.value||'').trim();
  try{
-  const r=await rpc('pc_place_qr_order',{p_qr_token:QR,p_items:items,p_notes:notes||null,p_customer_name:customer||null,p_customer_whatsapp:phone||null});
+  let r;
+  if(mode==='counter'){
+    r=await rpc('pc_place_counter_order',{p_business_slug:STORE,p_items:items,p_notes:notes||null,p_customer_name:customer,p_customer_whatsapp:phone||null});
+  }else{
+    r=await rpc('pc_place_qr_order',{p_qr_token:QR,p_items:items,p_notes:notes||null,p_customer_name:customer||null,p_customer_whatsapp:phone||null});
+  }
   qty={};
-  document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">✅</div><h1>Pedido enviado!</h1><p>Seu pedido <b>#'+esc(r.order_no)+'</b> já chegou na cozinha.</p><h2>'+money(r.total)+'</h2><button class="send" onclick="render()">Fazer outro pedido</button></div></main>';
+  if(mode==='counter'){
+    const senha=String(r.pickup_no).padStart(3,'0');
+    document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">✅</div><h1>Pedido enviado!</h1><div class="ticket-label">Sua senha</div><div class="ticket">'+senha+'</div><div class="notice"><b>'+esc(customer)+'</b>, aguarde sua senha ser chamada para retirar o pedido.</div><h2>'+money(r.total)+'</h2><button class="send" onclick="render()">Fazer outro pedido</button></div></main>';
+  }else{
+    document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">✅</div><h1>Pedido enviado!</h1><p>Seu pedido <b>#'+esc(r.order_no)+'</b> já chegou na cozinha.</p><h2>'+money(r.total)+'</h2><button class="send" onclick="render()">Fazer outro pedido</button></div></main>';
+  }
  }catch(e){alert(e.message)}
 }
-(async()=>{if(!QR){document.getElementById('app').innerHTML='<main><div class="card"><h2>Pede Comanda</h2><div class="err">Este link precisa do QR de uma mesa.</div></div></main>';return}try{ctx=await rpc('pc_qr_bootstrap',{p_qr_token:QR});render()}catch(e){document.getElementById('app').innerHTML='<main><div class="card"><h2>Comanda indisponível</h2><div class="err">'+esc(e.message)+'</div></div></main>'}})();
+(async()=>{
+ if(!mode){document.getElementById('app').innerHTML='<main><div class="card"><h2>Pede Comanda</h2><div class="err">Use o QR Code da mesa ou o link do estabelecimento.</div></div></main>';return}
+ try{ctx=mode==='counter'?await rpc('pc_counter_bootstrap',{p_business_slug:STORE}):await rpc('pc_qr_bootstrap',{p_qr_token:QR});render()}
+ catch(e){document.getElementById('app').innerHTML='<main><div class="card"><h2>Comanda indisponível</h2><div class="err">'+esc(e.message)+'</div></div></main>'}
+})();
 </script>
 </body>
 </html>
