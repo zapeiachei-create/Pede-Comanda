@@ -113,7 +113,32 @@ function brandHtml(){const logo=business?.logo_url?`<img class="logo-mini" src="
 function renderAdmin(){appMode='admin';document.documentElement.scrollLeft=0;document.body.scrollLeft=0;document.getElementById('app').innerHTML=`<header class="topbar"><div class="brand">${brandHtml()}</div><div class="toolbar"><button class="btn btn-secondary hide-mobile" onclick="openStaffLoginHint()">Abrir atendimento</button><button class="btn btn-secondary" onclick="logoutAdmin()">Sair</button></div></header><div class="layout"><aside class="sidebar">${nav('dashboard','▦','Visão geral')}${nav('kitchen','👨‍🍳','Cozinha')}${nav('menu','☰','Cardápio da comanda')}${nav('staff','👤','Equipe')}${nav('tables','▦','QR / Links')}${nav('settings','⚙','Configurações')}</aside><main class="main">${adminView()}</main></div><nav class="mobile-nav">${mnav('dashboard','▦','Visão')}${mnav('kitchen','👨‍🍳','Cozinha')}${mnav('menu','☰','Comanda')}${mnav('staff','👤','Equipe')}${mnav('tables','▦','QR/Link')}${mnav('settings','⚙','Config.')}</nav>`}
 function nav(v,ico,label){return `<button class="navbtn ${view===v?'active':''}" onclick="go('${v}')"><span>${ico}</span>${label}</button>`}function mnav(v,ico,label){return `<button class="${view===v?'active':''}" onclick="go('${v}')"><div>${ico}</div>${label}</button>`}function go(v){view=v;if(v==='kitchen')refreshOrders(false);renderAdmin()}
 function adminView(){return ({dashboard:dashboardView,kitchen:kitchenAdminView,menu:menuAdminView,staff:staffAdminView,tables:tablesAdminView,settings:settingsAdminView}[view]||dashboardView)()}
-function dashboardView(){const live=data.orders.filter(o=>!['delivered','cancelled'].includes(o.status));const done=data.orders.filter(o=>o.status==='delivered');const total=done.reduce((a,o)=>a+Number(o.total),0);return `<div class="page-head"><div><h1>Visão geral</h1><div class="muted">Acompanhe a operação do estabelecimento.</div></div><button class="btn btn-primary" onclick="openStaffLoginHint()">+ Atendimento</button></div><div class="grid grid-4"><div class="card stat"><span>Pedidos</span><b>${data.orders.length}</b></div><div class="card stat"><span>Em aberto</span><b>${live.length}</b></div><div class="card stat"><span>Faturamento entregue</span><b>${money(total)}</b></div><div class="card stat"><span>Ticket médio</span><b>${money(done.length?total/done.length:0)}</b></div></div><div class="card" style="margin-top:14px"><div class="page-head"><div><h2>Últimos pedidos</h2><div class="muted">Atualização automática.</div></div><button class="btn btn-soft" onclick="refreshOrders()">Atualizar</button></div>${ordersTable(data.orders.slice(0,12))}</div>`}
+function dashboardView(){const live=data.orders.filter(o=>!['delivered','cancelled'].includes(o.status));const done=data.orders.filter(o=>o.status==='delivered');const total=done.reduce((a,o)=>a+Number(o.total),0);return `<div class="page-head"><div><h1>Visão geral</h1><div class="muted">Acompanhe a operação do estabelecimento.</div></div><button class="btn btn-primary" onclick="openStaffLoginHint()">+ Atendimento</button></div><div class="grid grid-4"><div class="card stat"><span>Pedidos</span><b>${data.orders.length}</b></div><div class="card stat"><span>Em aberto</span><b>${live.length}</b></div><div class="card stat"><span>Faturamento entregue</span><b>${money(total)}</b></div><div class="card stat"><span>Ticket médio</span><b>${money(done.length?total/done.length:0)}</b></div></div>${tableSessionsPanel()}<div class="card" style="margin-top:14px"><div class="page-head"><div><h2>Últimos pedidos</h2><div class="muted">Atualização automática.</div></div><button class="btn btn-soft" onclick="refreshOrders()">Atualizar</button></div>${ordersTable(data.orders.slice(0,12))}</div>`}
+function tableSessionsPanel(){
+  if(!['tables','mixed'].includes(business?.service_mode||'tables'))return '';
+  const occupied=(data.sessions||[]).length;
+  const freeCount=Math.max(0,(data.tables||[]).length-occupied);
+  const cards=(data.tables||[]).map(t=>{
+    const s=(data.sessions||[]).find(x=>x.table_id===t.id);
+    if(!s)return `<div class="table-session-card free"><div class="table-session-top"><b>${esc(t.name)}</b><span class="table-state free-state">LIVRE</span></div><div class="muted small">Pronta para novo atendimento</div></div>`;
+    const os=(data.orders||[]).filter(o=>o.table_session_id===s.id&&o.status!=='cancelled');
+    const total=os.reduce((a,o)=>a+Number(o.total||0),0);
+    const people=[...new Set(os.map(o=>(o.customer_name||'').trim()).filter(Boolean))];
+    const names=people.length?people.slice(0,3).join(', ')+(people.length>3?'…':''):'Clientes da mesa';
+    return `<div class="table-session-card occupied"><div class="table-session-top"><b>${esc(t.name)}</b><span class="table-state occupied-state">OCUPADA</span></div><div class="small">${os.length} pedido${os.length===1?'':'s'} • <b>${money(total)}</b></div><div class="muted small table-customer">${esc(names)}</div><button class="btn btn-danger btn-sm btn-block" onclick="closeTableSession('${t.id}','${esc(t.name)}')">Encerrar mesa</button></div>`;
+  }).join('');
+  return `<div class="card table-session-panel" style="margin-top:14px"><div class="page-head"><div><h2 style="margin:0">Mesas agora</h2><div class="muted">${occupied} ocupada${occupied===1?'':'s'} • ${freeCount} livre${freeCount===1?'':'s'}</div></div><button class="btn btn-soft btn-sm" onclick="reloadAdminData().then(renderAdmin)">Atualizar</button></div><div class="table-session-grid">${cards}</div></div>`;
+}
+async function closeTableSession(tableId,tableName){
+  if(!confirm(`Encerrar ${tableName}?\n\nIsso fecha a conta desta ocupação, marca os pedidos como entregues e libera a mesa para a próxima família.`))return;
+  try{
+    const r=await rpc('pc_close_table_session',{p_table_id:tableId});
+    await reloadAdminData();
+    renderAdmin();
+    toast(`${tableName} encerrada • Total ${money(r.total)} • Mesa livre`);
+  }catch(e){toast(e.message)}
+}
+
 function orderPlace(o){return o.channel==='counter'?`Senha ${String(o.pickup_no||0).padStart(3,'0')} • Balcão`:tableName(o.table_id)}
 function orderOrigin(o){return o.channel==='counter'?'Cliente / Link':o.channel==='qr'?'Cliente / QR':staffName(o.staff_id)}
 function ordersTable(rows){if(!rows.length)return `<div class="empty">Nenhum pedido ainda.</div>`;return `<div class="table-wrap"><table class="table"><thead><tr><th>Pedido</th><th>Mesa / Retirada</th><th>Origem</th><th>Status</th><th>Total</th><th>Hora</th></tr></thead><tbody>${rows.map(o=>`<tr><td>#${o.order_no}</td><td>${esc(orderPlace(o))}</td><td>${esc(orderOrigin(o))}</td><td>${badge(o.status)}</td><td>${money(o.total)}</td><td>${fmtTime(o.created_at)}</td></tr>`).join('')}</tbody></table></div>`}
