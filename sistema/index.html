@@ -260,8 +260,53 @@ function addonEditor(){
   const p=data.products.find(x=>x.id===addonProductId);
   if(!p){addonProductId=null;return '';}
   const rows=data.addons.filter(a=>a.product_id===p.id);
-  return `<div class="card addon-admin"><div class="page-head"><div><h2 style="margin:0">Adicionais de ${esc(p.name)}</h2><div class="muted">Esses adicionais valem para todas as opções/variações deste produto. Preço 0 = grátis; preço maior que 0 = adicional pago.</div></div><div class="toolbar"><button class="btn btn-primary btn-sm" onclick="newAddon('${p.id}')">+ Adicional</button><button class="btn btn-secondary btn-sm" onclick="addonProductId=null;renderAdmin()">Fechar</button></div></div>${rows.length?`<div class="table-wrap"><table class="table"><thead><tr><th>Adicional</th><th>Preço</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td>${Number(a.price)>0?money(a.price):'<span class="badge b-ready">Grátis</span>'}</td><td>${a.active?'<span class="badge b-ready">Ativo</span>':'<span class="badge b-done">Inativo</span>'}</td><td><div class="toolbar"><button class="btn btn-soft btn-sm" onclick="editAddon('${a.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="removeAddon('${a.id}')">Excluir</button></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nenhum adicional cadastrado para este produto.</div>'}</div>`;
+  const sources=data.products.filter(x=>x.id!==p.id&&data.addons.some(a=>a.product_id===x.id));
+  const copyBox=sources.length?`<div class="card" style="margin:12px 0;background:#fafafa"><div class="field" style="margin:0"><label>Copiar adicionais de outro item</label><div class="toolbar"><select id="addonCopySource_${p.id}" style="min-width:220px"><option value="">Escolha o item...</option>${sources.map(s=>`<option value="${s.id}">${esc(s.name)} (${data.addons.filter(a=>a.product_id===s.id).length})</option>`).join('')}</select><button class="btn btn-soft btn-sm" onclick="copyAddonsFromSelected('${p.id}')">📋 Copiar adicionais</button></div><div class="muted small" style="margin-top:6px">A cópia fica independente. Depois você pode editar, excluir ou acrescentar adicionais neste item sem alterar o produto original.</div></div></div>`:'';
+  return `<div class="card addon-admin"><div class="page-head"><div><h2 style="margin:0">Adicionais de ${esc(p.name)}</h2><div class="muted">Esses adicionais valem para todas as opções/variações deste produto. Preço 0 = grátis; preço maior que 0 = adicional pago.</div></div><div class="toolbar"><button class="btn btn-primary btn-sm" onclick="newAddon('${p.id}')">+ Adicional</button>${rows.length?`<button class="btn btn-soft btn-sm" onclick="copyAddonsToNextProduct('${p.id}')">↧ Repetir no próximo item</button>`:''}<button class="btn btn-secondary btn-sm" onclick="addonProductId=null;renderAdmin()">Fechar</button></div></div>${copyBox}${rows.length?`<div class="table-wrap"><table class="table"><thead><tr><th>Adicional</th><th>Preço</th><th>Status</th><th>Ações</th></tr></thead><tbody>${rows.map(a=>`<tr><td><b>${esc(a.name)}</b></td><td>${Number(a.price)>0?money(a.price):'<span class="badge b-ready">Grátis</span>'}</td><td>${a.active?'<span class="badge b-ready">Ativo</span>':'<span class="badge b-done">Inativo</span>'}</td><td><div class="toolbar"><button class="btn btn-soft btn-sm" onclick="editAddon('${a.id}')">Editar</button><button class="btn btn-danger btn-sm" onclick="removeAddon('${a.id}')">Excluir</button></div></td></tr>`).join('')}</tbody></table></div>`:'<div class="empty">Nenhum adicional cadastrado para este produto.</div>'}</div>`;
 }
+async function copyAddonsBetweenProducts(sourceProductId,targetProductId){
+  if(!sourceProductId||!targetProductId||sourceProductId===targetProductId)return;
+  const source=data.products.find(x=>x.id===sourceProductId);
+  const target=data.products.find(x=>x.id===targetProductId);
+  const sourceAddons=data.addons.filter(a=>a.product_id===sourceProductId);
+  if(!source||!target)return toast('Produto não encontrado.');
+  if(!sourceAddons.length)return toast('O item escolhido não possui adicionais.');
+  const existing=data.addons.filter(a=>a.product_id===targetProductId);
+  if(existing.length&&!confirm(`"${target.name}" já possui ${existing.length} adicional(is). Deseja acrescentar também os adicionais de "${source.name}"?`))return;
+  if(!confirm(`Copiar ${sourceAddons.length} adicional(is) de "${source.name}" para "${target.name}"?\n\nDepois você poderá editar ou excluir cada cópia separadamente.`))return;
+  const base=existing.length*10;
+  const payload=sourceAddons.map((a,i)=>({
+    business_id:business.id,
+    product_id:targetProductId,
+    name:a.name,
+    price:Number(a.price)||0,
+    active:a.active!==false,
+    sort_order:base+(i+1)*10
+  }));
+  try{
+    await rest('pc_product_addons','',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify(payload)});
+    await reloadAdminData();
+    addonProductId=targetProductId;
+    renderAdmin();
+    toast(`${sourceAddons.length} adicional(is) copiado(s) para ${target.name}.`);
+  }catch(e){toast(e.message)}
+}
+async function copyAddonsFromSelected(targetProductId){
+  const el=document.getElementById('addonCopySource_'+targetProductId);
+  const sourceId=el?.value;
+  if(!sourceId)return toast('Escolha de qual item deseja copiar os adicionais.');
+  await copyAddonsBetweenProducts(sourceId,targetProductId);
+}
+async function copyAddonsToNextProduct(sourceProductId){
+  const source=data.products.find(x=>x.id===sourceProductId);
+  if(!source)return;
+  const sameCategory=data.products.filter(p=>p.category_id===source.category_id);
+  const pos=sameCategory.findIndex(p=>p.id===sourceProductId);
+  const next=sameCategory[pos+1];
+  if(!next)return toast('Este é o último item da categoria. Use "Copiar adicionais" para escolher outro produto.');
+  await copyAddonsBetweenProducts(sourceProductId,next.id);
+}
+
 async function newAddon(productId){
   const name=prompt('Nome do adicional, por exemplo: queijo extra, bacon, milho ou ovo');
   if(!name)return;
