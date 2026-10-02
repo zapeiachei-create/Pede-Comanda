@@ -18,11 +18,15 @@ frame.src='legacy/index.html'+location.search;
 
 function widgetCss(){
 return `
-.pc-lead-cta{margin-top:18px;padding:15px 13px;border:1px solid #ead4d9;background:linear-gradient(180deg,#fff9fa,#fff);border-radius:15px;text-align:center}
-.pc-lead-badge{width:42px;height:42px;margin:0 auto 8px;border-radius:13px;background:linear-gradient(135deg,#4d0710,var(--wine,#7b0f1b));color:#fff;display:grid;place-items:center;font-weight:1000;box-shadow:0 8px 20px #5b0b1830}
-.pc-lead-cta h3{margin:0 0 4px;font-size:16px;color:var(--wine,#7b0f1b)}
-.pc-lead-cta p{margin:0 0 11px;font-size:13px;line-height:1.35;color:#746b6b}
-.pc-lead-btn{width:100%;border:0;border-radius:12px;padding:13px;background:var(--wine,#7b0f1b);color:#fff;font-weight:900}.pc-help-btn{width:100%;border:0;background:transparent;color:#746b6b;font-weight:800;padding:10px;margin-top:3px}
+.pc-lead-cta{margin-top:14px;padding:9px 10px;border:1px solid #ead4d9;background:#fffafb;border-radius:12px;display:flex;align-items:center;gap:9px;text-align:left}
+.pc-lead-badge{width:30px;height:30px;min-width:30px;border-radius:9px;background:linear-gradient(135deg,#4d0710,var(--wine,#7b0f1b));color:#fff;display:grid;place-items:center;font-size:11px;font-weight:1000}
+.pc-lead-copy{min-width:0;flex:1}
+.pc-lead-cta h3{margin:0;font-size:12px;line-height:1.25;color:var(--wine,#7b0f1b)}
+.pc-lead-cta p{margin:2px 0 0;font-size:10.5px;line-height:1.25;color:#746b6b}
+.pc-lead-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+.pc-lead-btn{width:auto;border:0;border-radius:9px;padding:8px 10px;background:var(--wine,#7b0f1b);color:#fff;font-weight:900;font-size:10.5px;white-space:nowrap}
+.pc-help-btn{width:auto;border:0;background:transparent;color:#746b6b;font-weight:800;padding:5px 2px;font-size:9.5px;white-space:nowrap}
+@media(max-width:430px){.pc-lead-cta{align-items:flex-start}.pc-lead-actions{max-width:112px}.pc-lead-btn{padding:7px 8px;font-size:10px}.pc-help-btn{font-size:9px}}
 .pc-lead-modal{position:fixed;inset:0;z-index:9999;background:#24020899;display:grid;place-items:center;padding:16px;overflow:auto}
 .pc-lead-modal.pc-hidden{display:none}
 .pc-lead-card{position:relative;width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;padding:18px;box-shadow:0 28px 80px #24020855}
@@ -41,10 +45,8 @@ return `
 function widgetHtml(){
 return '<div class="pc-lead-cta" id="pcLeadCta">'+
 '<div class="pc-lead-badge">PC</div>'+
-'<h3>Quer o Pede Comanda no seu negócio?</h3>'+
-'<p>Crie sua conta agora e use <b>grátis por 7 dias</b>. Cadastre produtos, equipe e QR Codes sem esperar atendimento.</p>'+
-'<button class="pc-lead-btn" id="pcOpenLead">COMEÇAR MEUS 7 DIAS GRÁTIS</button>'+
-'<button class="pc-help-btn" id="pcHelpLead">Preciso de ajuda para configurar</button>'+
+'<div class="pc-lead-copy"><h3>Quer o Pede Comanda no seu negócio?</h3><p>Teste grátis por 7 dias.</p></div>'+
+'<div class="pc-lead-actions"><button class="pc-lead-btn" id="pcOpenLead">Criar conta</button><button class="pc-help-btn" id="pcHelpLead">Ajuda</button></div>'+
 '</div>';
 }
 
