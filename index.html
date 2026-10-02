@@ -70,7 +70,11 @@ function injectWidget(){
  if(!d.getElementById('pcLeadStyles')){
    const s=d.createElement('style'); s.id='pcLeadStyles'; s.textContent=widgetCss(); d.head.appendChild(s);
  }
- const target=d.querySelector('.sheet .body');
+ let target=d.querySelector('.sheet .body');
+ if(!target){
+   const success=[...d.querySelectorAll('main .card')].find(el=>(el.textContent||'').includes('Pedido enviado!'));
+   if(success) target=success;
+ }
  if(!target)return;
  if(!d.getElementById('pcLeadCta')) target.insertAdjacentHTML('beforeend',widgetHtml());
  if(!d.getElementById('pcLeadModal')) d.body.insertAdjacentHTML('beforeend',modalHtml());
