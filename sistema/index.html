@@ -303,12 +303,16 @@ async function editCategory(id){
   }catch(e){toast(e.message)}
 }
 async function deleteCategory(id){
-  const c=data.categories.find(x=>x.id===id);if(!c)return;
+  const cat=data.categories.find(x=>x.id===id);if(!cat)return;
   const count=data.products.filter(p=>p.category_id===id).length;
-  const warning=count?\`\n\nAtenção: esta categoria possui \${count} item\${count===1?'':'s'}. Ao excluir a categoria, esses itens e seus adicionais/opções também serão excluídos.\`:'';
-  if(!confirm(\`Excluir a categoria "\${c.name}"?\${warning}\n\nEsta ação não pode ser desfeita.\`))return;
+  let msg='Excluir a categoria "'+cat.name+'"?';
+  if(count){
+    msg+='\n\nAtenção: esta categoria possui '+count+' item'+(count===1?'':'s')+'. Ao excluir a categoria, esses itens e seus adicionais/opções também serão excluídos.';
+  }
+  msg+='\n\nEsta ação não pode ser desfeita.';
+  if(!confirm(msg))return;
   try{
-    await rest('pc_categories',`id=eq.${id}&business_id=eq.${business.id}`,{method:'DELETE',headers:{Prefer:'return=minimal'}});
+    await rest('pc_categories','id=eq.'+id+'&business_id=eq.'+business.id,{method:'DELETE',headers:{Prefer:'return=minimal'}});
     addonProductId=null;variantProductId=null;
     await reloadAdminData();renderAdmin();toast('Categoria excluída.');
   }catch(e){toast(e.message)}
