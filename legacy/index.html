@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#7b0f1b">
+<title>Pede Comanda</title>
+<style>
+:root{--wine:#7b0f1b;--wine2:#a4162a;--bg:#f7f3f1;--card:#fff;--text:#211d1d;--muted:#746b6b;--line:#eadfdb}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(135deg,#4d0710,var(--wine));color:#fff;padding:14px;display:flex;align-items:center;gap:10px;box-shadow:0 5px 18px #40081833}
+.mark{width:44px;height:44px;border:2px solid #fff;border-radius:13px;display:grid;place-items:center;font-weight:900}.logo{width:44px;height:44px;border-radius:13px;background:#fff;object-fit:cover;padding:2px}
+main{max-width:720px;margin:auto;padding:14px 12px 36px}.sheet{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 18px 45px #5a07151a}
+.intro{padding:16px;background:linear-gradient(135deg,#6a0b18,var(--wine2));color:#fff}.intro h1{font-size:22px;margin:0 0 4px}.intro p{margin:0;opacity:.9}
+.body{padding:13px}.cat{border:1px solid var(--line);border-radius:14px;overflow:hidden;margin-bottom:11px}.cat h3{margin:0;background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;padding:10px 12px;font-size:13px}
+.row{display:grid;grid-template-columns:1fr 100px;gap:8px;align-items:center;padding:12px;border-top:1px solid var(--line)}.name{font-weight:800}.price{color:var(--muted);font-size:14px;margin-top:3px}
+.qty{display:flex;align-items:center;justify-content:flex-end;gap:6px}.qty button{width:32px;height:32px;border:0;border-radius:8px;background:#f6e3e7;color:var(--wine);font-size:18px;font-weight:900}.qty b{min-width:22px;text-align:center}
+.field{margin-top:12px}.field label{display:block;font-size:13px;font-weight:800;margin-bottom:6px}.field input,.field textarea{width:100%;border:1px solid #dfd1cd;border-radius:11px;padding:12px;background:#fff;font:inherit}
+.hint{font-size:12px;color:var(--muted);margin-top:5px}.total{display:flex;justify-content:space-between;align-items:end;border-top:1px dashed #dbc9c5;margin-top:13px;padding-top:12px}.total strong{font-size:30px;color:var(--wine)}
+.send{width:100%;border:0;border-radius:13px;padding:15px;margin-top:12px;background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;font-size:17px;font-weight:900}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px}.center{text-align:center}.ok{font-size:54px}.err{color:#8b1c2c;background:#fff1f3;border:1px solid #f1c5cd;padding:12px;border-radius:12px}.loader{min-height:70vh;display:grid;place-items:center}
+.ticket{font-size:64px;line-height:1;font-weight:1000;color:var(--wine);letter-spacing:2px;margin:8px 0}.ticket-label{font-size:13px;font-weight:900;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase}
+.notice{background:#f7e4e7;border:1px solid #ecc3cc;padding:11px;border-radius:12px;color:#6e1421;margin:12px 0}.addon-box,.config-box{margin-top:9px;padding:10px;background:#faf6f5;border:1px solid var(--line);border-radius:10px}.addon-title,.config-title{font-size:11px;font-weight:900;color:var(--wine);margin-bottom:6px;text-transform:uppercase}.addon-opt,.variant-opt{display:flex;align-items:center;gap:7px;font-size:12px;padding:5px 0}.addon-opt input,.variant-opt input{accent-color:var(--wine)}.addon-price{margin-left:auto;font-weight:800;color:var(--wine)}.mount{border:0;border-radius:10px;padding:9px 12px;background:#f6e3e7;color:var(--wine);font-weight:900}.add-config{width:100%;border:0;border-radius:10px;padding:11px;margin-top:9px;background:var(--wine);color:#fff;font-weight:900}.cart{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden}.cart h4{margin:0;background:#f8efed;padding:10px 12px;color:var(--wine)}.cart-line{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-top:1px solid var(--line);align-items:flex-start}.cart-line:first-of-type{border-top:0}.cart-detail{font-size:12px;color:var(--muted);margin-top:3px}.remove-line{border:0;background:#fff0f2;color:#8b1c2c;border-radius:8px;padding:6px 8px;font-weight:800}.config-count{font-size:11px;color:var(--muted);margin-top:4px}
+@media(max-width:420px){.row{grid-template-columns:1fr 96px}.intro h1{font-size:20px}}
+</style>
+</head>
+<body>
+<div id="app"><div class="loader">Abrindo sua comanda...</div></div>
+<script>
+const SB='https://aajpumelbbgutmeackuu.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhanB1bWVsYmJndXRtZWFja3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzUwODQsImV4cCI6MjA3NTAxMTA4NH0.6SoJ0vQy5F33IOeVjMllxPv7SlST6dpaGJMlvPceLVk';
+const params=new URLSearchParams(location.search);
+const QR=params.get('qr')||'';
+const STORE=params.get('loja')||params.get('balcao')||'';
+let mode=QR?'table':(STORE?'counter':'');
+let ctx=null,qty={},lines=[],config=null;
+const esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
+async function rpc(n,b){const r=await fetch(SB+'/rest/v1/rpc/'+n,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify(b)});const t=await r.text();let d=null;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(d?.message||d||'Erro ao processar pedido');return d}
+function products(){return (ctx?.categories||[]).flatMap(c=>c.products||[])}
+function productById(id){return products().find(p=>p.id===id)}
+function variantOf(p,id){return (p?.variants||[]).find(v=>v.id===id)}
+function addonsOf(p,ids){const s=new Set(ids||[]);return (p?.addons||[]).filter(a=>s.has(a.id))}
+function isCustom(p){return (p.variants||[]).length>0||(p.addons||[]).length>0}
+function simpleTotal(){return products().reduce((a,p)=>a+Number(p.price)*(qty[p.id]||0),0)}
+function lineTotal(l){const p=productById(l.product_id);if(!p)return 0;const v=variantOf(p,l.variant_id);return Number(p.price)+Number(v?.price_delta||0)+addonsOf(p,l.addons).reduce((s,a)=>s+Number(a.price||0),0)}
+function total(){return simpleTotal()+lines.reduce((s,l)=>s+lineTotal(l),0)}
+function snapshot(){return {customer:document.getElementById('customer')?.value||'',phone:document.getElementById('phone')?.value||'',notes:document.getElementById('notes')?.value||''}}
+function change(id,d){const s=snapshot();qty[id]=Math.max(0,(qty[id]||0)+d);render(s)}
+function openConfig(pid){const s=snapshot();config={pid,variant_id:'',addons:[]};render(s)}
+function setVariant(vid){const s=snapshot();if(config)config.variant_id=vid;render(s)}
+function toggleConfigAddon(aid,on){const s=snapshot();if(!config)return;const set=new Set(config.addons||[]);on?set.add(aid):set.delete(aid);config.addons=[...set];render(s)}
+function addConfigured(){
+ const s=snapshot(); if(!config)return;
+ const p=productById(config.pid); if(!p)return;
+ if((p.variants||[]).length&&!config.variant_id)return alert('Escolha primeiro a massa/opção.');
+ lines.push({key:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),product_id:p.id,variant_id:config.variant_id||null,addons:[...(config.addons||[])]});
+ config=null; render(s);
+}
+function removeLine(key){const s=snapshot();lines=lines.filter(l=>l.key!==key);render(s)}
+function normalizePhone(v){let d=String(v||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d}
+function locationLabel(){return mode==='counter'?'Balcão / Retirada':ctx.table_name}
+function variantText(p,v){return v?esc(v.name)+(Number(v.price_delta)>0?' (+'+money(v.price_delta)+')':''):''}
+function configHtml(p){
+ if(!config||config.pid!==p.id)return '';
+ const vars=p.variants||[], ads=p.addons||[];
+ return '<div class="config-box">'+
+   (vars.length?'<div class="config-title">1. Escolha a massa/opção</div>'+vars.map(v=>'<label class="variant-opt"><input type="radio" name="variant_'+p.id+'" '+(config.variant_id===v.id?'checked':'')+' onchange="setVariant(\''+v.id+'\')"><span>'+esc(v.name)+'</span><span class="addon-price">'+(Number(v.price_delta)>0?('+'+money(v.price_delta)):'Sem acréscimo')+'</span></label>').join(''):'')+
+   (ads.length?'<div class="config-title" style="margin-top:8px">'+(vars.length?'2. ':'')+'Escolha os adicionais</div>'+ads.map(a=>'<label class="addon-opt"><input type="checkbox" '+((config.addons||[]).includes(a.id)?'checked':'')+' onchange="toggleConfigAddon(\''+a.id+'\',this.checked)"><span>'+esc(a.name)+'</span><span class="addon-price">'+(Number(a.price)>0?('+'+money(a.price)):'Grátis')+'</span></label>').join(''):'')+
+   '<button class="add-config" onclick="addConfigured()">Adicionar este item ao pedido</button></div>';
+}
+function productHtml(p){
+ const count=lines.filter(l=>l.product_id===p.id).length;
+ if(isCustom(p)){
+   return '<div class="row"><div><div class="name">'+esc(p.name)+'</div><div class="price">A partir de '+money(p.price)+'</div><div class="config-count">'+(count?count+' montado'+(count>1?'s':'')+' no pedido':'Escolha uma opção e personalize')+'</div></div><div><button class="mount" onclick="openConfig(\''+p.id+'\')">Montar</button></div>'+configHtml(p)+'</div>';
+ }
+ return '<div class="row"><div><div class="name">'+esc(p.name)+'</div><div class="price">'+money(p.price)+'</div></div><div class="qty"><button onclick="change(\''+p.id+'\',-1)">−</button><b>'+(qty[p.id]||0)+'</b><button onclick="change(\''+p.id+'\',1)">+</button></div></div>';
+}
+function cartHtml(){
+ if(!lines.length)return '';
+ return '<div class="cart"><h4>Itens personalizados</h4>'+lines.map(l=>{const p=productById(l.product_id);const v=variantOf(p,l.variant_id);const ads=addonsOf(p,l.addons);const details=[v?('Massa: '+v.name):'',ads.length?('Adicionais: '+ads.map(a=>a.name).join(', ')):''].filter(Boolean).join(' • ');return '<div class="cart-line"><div><b>'+esc(p?.name||'Item')+'</b><div class="cart-detail">'+esc(details||'Sem adicionais')+'</div><b>'+money(lineTotal(l))+'</b></div><button class="remove-line" onclick="removeLine(\''+l.key+'\')">Remover</button></div>'}).join('')+'</div>';
+}
+function render(saved={}){
+ document.documentElement.style.setProperty('--wine',ctx.theme_color||'#7b0f1b');
+ document.getElementById('app').innerHTML=
+ '<header>'+(ctx.logo_url?'<img class="logo" src="'+esc(ctx.logo_url)+'">':'<div class="mark">PC</div>')+
+ '<div><b style="font-size:18px">'+esc(ctx.business_name)+'</b><div style="opacity:.82">Pede Comanda • '+esc(locationLabel())+'</div></div></header>'+
+ '<main><div class="sheet"><div class="intro"><h1>'+esc(locationLabel())+'</h1><p>'+
+ (mode==='counter'?'Faça seu pedido e receba uma senha para retirada. Sem cadastro.':'Escolha seus itens e envie direto para a cozinha. Sem cadastro.')+
+ '</p></div><div class="body">'+
+ (ctx.categories||[]).map(c=>'<section class="cat"><h3>'+esc(c.name)+'</h3>'+(c.products||[]).map(productHtml).join('')+'</section>').join('')+
+ cartHtml()+
+ '<div class="field"><label>Seu nome'+(mode==='counter'?' *':'')+'</label><input id="customer" placeholder="Ex.: João" value="'+esc(saved.customer||'')+'"><div class="hint">'+(mode==='counter'?'Necessário para chamar seu pedido.':'Usado apenas para identificar o pedido.')+'</div></div>'+
+ '<div class="field"><label>WhatsApp (opcional)</label><input id="phone" inputmode="tel" placeholder="(21) 99999-9999" value="'+esc(saved.phone||'')+'"><div class="hint">Não cria conta. Serve apenas para contato deste pedido.</div></div>'+
+ '<div class="field"><label>Observações</label><textarea id="notes" rows="3" placeholder="Ex.: sem cebola, carne bem passada...">'+esc(saved.notes||'')+'</textarea></div>'+
+ '<div class="total"><span>Total</span><strong>'+money(total())+'</strong></div>'+
+ '<button class="send" onclick="sendOrder()">Enviar pedido para a cozinha</button></div></div></main>';
+}
+async function sendOrder(){
+ const items=Object.entries(qty).filter(([,q])=>q>0).map(([product_id,qty])=>({product_id,qty,addons:[],variant_id:null}))
+   .concat(lines.map(l=>({product_id:l.product_id,qty:1,addons:l.addons||[],variant_id:l.variant_id||null})));
+ if(!items.length)return alert('Selecione pelo menos um item.');
+ const customer=(document.getElementById('customer')?.value||'').trim();
+ if(mode==='counter'&&!customer)return alert('Informe seu nome para identificarmos sua retirada.');
+ const rawPhone=document.getElementById('phone')?.value||'';
+ const phone=normalizePhone(rawPhone);
+ if(rawPhone.trim() && phone.length<12)return alert('Digite um WhatsApp válido ou deixe em branco.');
+ const notes=(document.getElementById('notes')?.value||'').trim();
+ try{
+  let r;
+  if(mode==='counter'){
+    r=await rpc('pc_place_counter_order',{p_business_slug:STORE,p_items:items,p_notes:notes||null,p_customer_name:customer,p_customer_whatsapp:phone||null});
+  }else{
+    r=await rpc('pc_place_qr_order_v2',{p_qr_token:QR,p_items:items,p_notes:notes||null,p_customer_name:customer||null,p_customer_whatsapp:phone||null,p_table_session_token:ctx.table_session_token||null,p_session_epoch:ctx.session_epoch});
+    ctx.table_session_token=r.table_session_token;
+    ctx.session_epoch=r.session_epoch;
+    ctx.table_occupied=true;
+  }
+  qty={};lines=[];config=null;
+  if(mode==='counter'){
+    const senha=String(r.pickup_no).padStart(3,'0');
+    document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">✅</div><h1>Pedido enviado!</h1><div class="ticket-label">Sua senha</div><div class="ticket">'+senha+'</div><div class="notice"><b>'+esc(customer)+'</b>, aguarde sua senha ser chamada para retirar o pedido.</div><h2>'+money(r.total)+'</h2><button class="send" onclick="render()">Fazer outro pedido</button></div></main>';
+  }else{
+    document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">✅</div><h1>Pedido enviado!</h1><p>Seu pedido <b>#'+esc(r.order_no)+'</b> já chegou na cozinha.</p><h2>'+money(r.total)+'</h2><button class="send" onclick="render()">Fazer outro pedido</button></div></main>';
+  }
+ }catch(e){
+   if(mode==='table' && /encerrada|escaneie novamente|atualize esta página/i.test(e.message)){
+     document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">🔒</div><h1>Comanda encerrada</h1><div class="notice">Esta ocupação da mesa já foi finalizada. Para evitar misturar pedidos com a próxima família, escaneie novamente o QR Code da mesa.</div><button class="send" onclick="location.reload()">Atualizar leitura do QR</button></div></main>';
+   }else{
+     alert(e.message);
+   }
+ }
+}
+(async()=>{
+ if(!mode){document.getElementById('app').innerHTML='<main><div class="card"><h2>Pede Comanda</h2><div class="err">Use o QR Code da mesa ou o link do estabelecimento.</div></div></main>';return}
+ try{ctx=mode==='counter'?await rpc('pc_counter_bootstrap',{p_business_slug:STORE}):await rpc('pc_qr_bootstrap',{p_qr_token:QR});render()}
+ catch(e){document.getElementById('app').innerHTML='<main><div class="card"><h2>Comanda indisponível</h2><div class="err">'+esc(e.message)+'</div></div></main>'}
+})();
+</script>
+</body>
+</html>
