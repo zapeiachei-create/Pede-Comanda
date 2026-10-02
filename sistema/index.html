@@ -20,42 +20,51 @@
 @media(max-width:900px){.auth{grid-template-columns:1fr}.hero{padding:34px 22px 12px}.system-logo{gap:12px}.system-icon{width:72px;height:72px;border-radius:19px}.system-icon span{font-size:33px;letter-spacing:-6px}.system-name{font-size:37px;letter-spacing:-1.5px}.system-sub{font-size:9px;letter-spacing:.26em;margin-top:7px}.hero-tagline{font-size:20px;margin-top:22px}.authbox{margin:8px auto 28px}.layout{grid-template-columns:1fr}.sidebar{display:none}.main{padding:14px 12px 84px}.grid-4,.grid-3,.grid-2{grid-template-columns:1fr}.orders-list{grid-template-columns:1fr}.triplet{grid-template-columns:1fr}.menu-row{grid-template-columns:1fr 90px}.menu-row .price{grid-column:1/-1}.mobile-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);padding:6px;justify-content:space-around}.mobile-nav button{border:0;background:transparent;color:#655a58;font-size:10px;padding:5px 4px}.mobile-nav button.active{color:var(--wine);font-weight:900}.page-head h1{font-size:30px}.topbar{padding:9px 10px}.brandtxt small{display:none}.hide-mobile{display:none!important}}
 
 /* Ajuste mobile compacto - Pede Comanda */
-@media(max-width:600px){
+@media(max-width:900px){
   html,body{width:100%;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%}
-  #app,.layout,.main{width:100%;max-width:100%;min-width:0}
-  .topbar{padding:8px 10px;gap:8px}
-  .brand{gap:8px;min-width:0;flex:1}
-  .logo-mini,.brandmark{width:38px;height:38px;border-radius:10px}
-  .brandtxt strong{font-size:16px}
-  .topbar .btn{padding:8px 11px;font-size:14px;border-radius:10px}
-  .main{padding:12px 10px 78px}
-  .page-head{display:flex;flex-wrap:wrap;align-items:flex-start;gap:9px;margin-bottom:12px;min-width:0}
-  .page-head>div{flex:1 1 190px;min-width:0}
-  .page-head>.btn{flex:0 0 auto;margin-left:auto;padding:8px 10px;font-size:13px;white-space:nowrap;max-width:46%}
-  .page-head h1{font-size:24px;line-height:1.08}
+  body{position:relative}
+  #app,.layout,.main{width:100%;max-width:100vw;min-width:0;overflow-x:hidden}
+  .topbar{width:100%;max-width:100vw;padding:8px 10px;gap:8px}
+  .brand{gap:8px;min-width:0;flex:1;overflow:hidden}
+  .logo-mini,.brandmark{width:38px;height:38px;border-radius:10px;flex:0 0 38px}
+  .brandtxt{min-width:0;overflow:hidden}
+  .brandtxt strong{font-size:16px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar .toolbar{flex:0 0 auto}
+  .topbar .btn{padding:8px 11px;font-size:14px;border-radius:10px;white-space:nowrap}
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .main{padding:12px 10px 78px;margin:0}
+  .page-head{display:flex;flex-wrap:wrap;align-items:flex-start;gap:9px;margin-bottom:12px;min-width:0;width:100%;max-width:100%}
+  .page-head>div{flex:1 1 220px;min-width:0;max-width:100%}
+  .page-head>.btn{flex:0 0 auto;margin-left:auto;padding:8px 10px;font-size:13px;white-space:nowrap;max-width:44%}
+  .page-head h1{font-size:24px;line-height:1.08;overflow-wrap:anywhere}
   .page-head h2{font-size:20px;line-height:1.1}
   .page-head .muted{font-size:14px;line-height:1.28;margin-top:4px}
-  .grid{gap:10px}
+  .grid{gap:10px;width:100%;max-width:100%;min-width:0}
   .grid-4{grid-template-columns:repeat(2,minmax(0,1fr))}
   .grid-3,.grid-2{grid-template-columns:1fr}
-  .card{border-radius:15px;padding:13px;box-shadow:0 7px 22px rgba(72,10,20,.08)}
+  .card{width:100%;max-width:100%;min-width:0;border-radius:15px;padding:13px;box-shadow:0 7px 22px rgba(72,10,20,.08);overflow:hidden}
   .stat{min-height:94px}
   .stat span{font-size:12px;line-height:1.2}
   .stat b{font-size:22px;line-height:1.05;margin-top:6px;overflow-wrap:anywhere}
+  .table-wrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table{min-width:620px}
   .table th,.table td{padding:9px 8px;font-size:12px}
   .table th{font-size:10px}
   .orders-list{gap:9px}
-  .order-card{padding:11px;border-radius:13px}
-  .status-tabs{margin-bottom:9px}
+  .order-card{padding:11px;border-radius:13px;min-width:0}
+  .status-tabs{margin-bottom:9px;max-width:100%;overflow-x:auto}
   .status-tabs button{padding:7px 9px;font-size:12px}
-  .mobile-nav{padding:4px 3px calc(4px + env(safe-area-inset-bottom))}
-  .mobile-nav button{font-size:9px;padding:4px 2px;min-width:0}
-  .toolbar{gap:6px}
+  .mobile-nav{padding:4px 3px calc(4px + env(safe-area-inset-bottom));width:100%;max-width:100vw;overflow:hidden}
+  .mobile-nav button{font-size:9px;padding:4px 2px;min-width:0;flex:1}
+  .toolbar{gap:6px;min-width:0}
   .btn{padding:9px 11px;border-radius:10px}
   .btn-sm{padding:6px 8px;font-size:12px}
   .toast{left:10px;right:10px;bottom:72px;max-width:none}
 }
-
+@media(max-width:430px){
+  .grid-4{grid-template-columns:1fr}
+  .page-head>.btn{max-width:100%;margin-left:0}
+}
 </style>
 </head>
 <body><div id="app"><div class="loader"><div class="spinner"></div></div></div>
@@ -101,7 +110,7 @@ async function createBusiness(){const name=$('#onName').value.trim(),slug=slugif
 async function reloadAdminData(){const bid=business.id;const [staff,tables,cats,products]=await Promise.all([rest('pc_staff',`select=id,name,role,active,created_at&business_id=eq.${bid}&order=created_at.asc`),rest('pc_tables',`select=*&business_id=eq.${bid}&order=sort_order.asc,name.asc`),rest('pc_categories',`select=*&business_id=eq.${bid}&order=sort_order.asc,name.asc`),rest('pc_products',`select=*&business_id=eq.${bid}&order=sort_order.asc,name.asc`)]);data.staff=staff;data.tables=tables;data.categories=cats;data.products=products;await refreshOrders(false)}
 async function refreshOrders(rerender=true){if(!business)return;try{const [orders,items]=await Promise.all([rest('pc_orders',`select=*&business_id=eq.${business.id}&order=created_at.desc&limit=150`),rest('pc_order_items',`select=*&business_id=eq.${business.id}&order=created_at.asc&limit=1000`)]);data.orders=orders;data.items=items;if(rerender)renderAdmin()}catch(e){console.warn(e)}}
 function brandHtml(){const logo=business?.logo_url?`<img class="logo-mini" src="${esc(business.logo_url)}">`:`<div class="brandmark">PC</div>`;return `${logo}<div class="brandtxt"><strong>${esc(business?.name||'Pede Comanda')}</strong><small>Pede Comanda • Administrador</small></div>`}
-function renderAdmin(){appMode='admin';document.getElementById('app').innerHTML=`<header class="topbar"><div class="brand">${brandHtml()}</div><div class="toolbar"><button class="btn btn-secondary hide-mobile" onclick="openStaffLoginHint()">Abrir atendimento</button><button class="btn btn-secondary" onclick="logoutAdmin()">Sair</button></div></header><div class="layout"><aside class="sidebar">${nav('dashboard','▦','Visão geral')}${nav('kitchen','👨‍🍳','Cozinha')}${nav('menu','☰','Cardápio da comanda')}${nav('staff','👤','Equipe')}${nav('tables','▦','QR / Links')}${nav('settings','⚙','Configurações')}</aside><main class="main">${adminView()}</main></div><nav class="mobile-nav">${mnav('dashboard','▦','Visão')}${mnav('kitchen','👨‍🍳','Cozinha')}${mnav('menu','☰','Comanda')}${mnav('staff','👤','Equipe')}${mnav('tables','▦','QR/Link')}${mnav('settings','⚙','Config.')}</nav>`}
+function renderAdmin(){appMode='admin';document.documentElement.scrollLeft=0;document.body.scrollLeft=0;document.getElementById('app').innerHTML=`<header class="topbar"><div class="brand">${brandHtml()}</div><div class="toolbar"><button class="btn btn-secondary hide-mobile" onclick="openStaffLoginHint()">Abrir atendimento</button><button class="btn btn-secondary" onclick="logoutAdmin()">Sair</button></div></header><div class="layout"><aside class="sidebar">${nav('dashboard','▦','Visão geral')}${nav('kitchen','👨‍🍳','Cozinha')}${nav('menu','☰','Cardápio da comanda')}${nav('staff','👤','Equipe')}${nav('tables','▦','QR / Links')}${nav('settings','⚙','Configurações')}</aside><main class="main">${adminView()}</main></div><nav class="mobile-nav">${mnav('dashboard','▦','Visão')}${mnav('kitchen','👨‍🍳','Cozinha')}${mnav('menu','☰','Comanda')}${mnav('staff','👤','Equipe')}${mnav('tables','▦','QR/Link')}${mnav('settings','⚙','Config.')}</nav>`}
 function nav(v,ico,label){return `<button class="navbtn ${view===v?'active':''}" onclick="go('${v}')"><span>${ico}</span>${label}</button>`}function mnav(v,ico,label){return `<button class="${view===v?'active':''}" onclick="go('${v}')"><div>${ico}</div>${label}</button>`}function go(v){view=v;if(v==='kitchen')refreshOrders(false);renderAdmin()}
 function adminView(){return ({dashboard:dashboardView,kitchen:kitchenAdminView,menu:menuAdminView,staff:staffAdminView,tables:tablesAdminView,settings:settingsAdminView}[view]||dashboardView)()}
 function dashboardView(){const live=data.orders.filter(o=>!['delivered','cancelled'].includes(o.status));const done=data.orders.filter(o=>o.status==='delivered');const total=done.reduce((a,o)=>a+Number(o.total),0);return `<div class="page-head"><div><h1>Visão geral</h1><div class="muted">Acompanhe a operação do estabelecimento.</div></div><button class="btn btn-primary" onclick="openStaffLoginHint()">+ Atendimento</button></div><div class="grid grid-4"><div class="card stat"><span>Pedidos</span><b>${data.orders.length}</b></div><div class="card stat"><span>Em aberto</span><b>${live.length}</b></div><div class="card stat"><span>Faturamento entregue</span><b>${money(total)}</b></div><div class="card stat"><span>Ticket médio</span><b>${money(done.length?total/done.length:0)}</b></div></div><div class="card" style="margin-top:14px"><div class="page-head"><div><h2>Últimos pedidos</h2><div class="muted">Atualização automática.</div></div><button class="btn btn-soft" onclick="refreshOrders()">Atualizar</button></div>${ordersTable(data.orders.slice(0,12))}</div>`}
