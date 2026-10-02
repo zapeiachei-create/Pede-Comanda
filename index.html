@@ -72,7 +72,10 @@ async function sendOrder(){
   if(mode==='counter'){
     r=await rpc('pc_place_counter_order',{p_business_slug:STORE,p_items:items,p_notes:notes||null,p_customer_name:customer,p_customer_whatsapp:phone||null});
   }else{
-    r=await rpc('pc_place_qr_order',{p_qr_token:QR,p_items:items,p_notes:notes||null,p_customer_name:customer||null,p_customer_whatsapp:phone||null});
+    r=await rpc('pc_place_qr_order_v2',{p_qr_token:QR,p_items:items,p_notes:notes||null,p_customer_name:customer||null,p_customer_whatsapp:phone||null,p_table_session_token:ctx.table_session_token||null,p_session_epoch:ctx.session_epoch});
+    ctx.table_session_token=r.table_session_token;
+    ctx.session_epoch=r.session_epoch;
+    ctx.table_occupied=true;
   }
   qty={};
   if(mode==='counter'){
@@ -81,7 +84,13 @@ async function sendOrder(){
   }else{
     document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">✅</div><h1>Pedido enviado!</h1><p>Seu pedido <b>#'+esc(r.order_no)+'</b> já chegou na cozinha.</p><h2>'+money(r.total)+'</h2><button class="send" onclick="render()">Fazer outro pedido</button></div></main>';
   }
- }catch(e){alert(e.message)}
+ }catch(e){
+   if(mode==='table' && /encerrada|escaneie novamente|atualize esta página/i.test(e.message)){
+     document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">🔒</div><h1>Comanda encerrada</h1><div class="notice">Esta ocupação da mesa já foi finalizada. Para evitar misturar pedidos com a próxima família, escaneie novamente o QR Code da mesa.</div><button class="send" onclick="location.reload()">Atualizar leitura do QR</button></div></main>';
+   }else{
+     alert(e.message);
+   }
+ }
 }
 (async()=>{
  if(!mode){document.getElementById('app').innerHTML='<main><div class="card"><h2>Pede Comanda</h2><div class="err">Use o QR Code da mesa ou o link do estabelecimento.</div></div></main>';return}
