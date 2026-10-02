@@ -20,7 +20,7 @@ main{max-width:720px;margin:auto;padding:14px 12px 36px}.sheet{background:#fff;b
 .send{width:100%;border:0;border-radius:13px;padding:15px;margin-top:12px;background:linear-gradient(135deg,var(--wine),var(--wine2));color:#fff;font-size:17px;font-weight:900}
 .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px}.center{text-align:center}.ok{font-size:54px}.err{color:#8b1c2c;background:#fff1f3;border:1px solid #f1c5cd;padding:12px;border-radius:12px}.loader{min-height:70vh;display:grid;place-items:center}
 .ticket{font-size:64px;line-height:1;font-weight:1000;color:var(--wine);letter-spacing:2px;margin:8px 0}.ticket-label{font-size:13px;font-weight:900;letter-spacing:1.3px;color:var(--muted);text-transform:uppercase}
-.notice{background:#f7e4e7;border:1px solid #ecc3cc;padding:11px;border-radius:12px;color:#6e1421;margin:12px 0}
+.notice{background:#f7e4e7;border:1px solid #ecc3cc;padding:11px;border-radius:12px;color:#6e1421;margin:12px 0}.addon-box{margin-top:9px;padding:9px;background:#faf6f5;border:1px solid var(--line);border-radius:10px}.addon-title{font-size:11px;font-weight:900;color:var(--wine);margin-bottom:5px;text-transform:uppercase}.addon-opt{display:flex;align-items:center;gap:7px;font-size:12px;padding:4px 0}.addon-opt input{accent-color:var(--wine)}.addon-price{margin-left:auto;font-weight:800;color:var(--wine)}
 @media(max-width:420px){.row{grid-template-columns:1fr 96px}.intro h1{font-size:20px}}
 </style>
 </head>
@@ -33,14 +33,16 @@ const params=new URLSearchParams(location.search);
 const QR=params.get('qr')||'';
 const STORE=params.get('loja')||params.get('balcao')||'';
 let mode=QR?'table':(STORE?'counter':'');
-let ctx=null,qty={};
+let ctx=null,qty={},addons={};
 const esc=s=>String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
 async function rpc(n,b){const r=await fetch(SB+'/rest/v1/rpc/'+n,{method:'POST',headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'},body:JSON.stringify(b)});const t=await r.text();let d=null;try{d=t?JSON.parse(t):null}catch{d=t}if(!r.ok)throw Error(d?.message||d||'Erro ao processar pedido');return d}
 function products(){return (ctx?.categories||[]).flatMap(c=>c.products||[])}
-function total(){return products().reduce((a,p)=>a+Number(p.price)*(qty[p.id]||0),0)}
+function addonUnitTotal(p){const ids=addons[p.id]||[];return (p.addons||[]).filter(a=>ids.includes(a.id)).reduce((s,a)=>s+Number(a.price||0),0)}
+function total(){return products().reduce((a,p)=>a+(Number(p.price)+addonUnitTotal(p))*(qty[p.id]||0),0)}
 function snapshot(){return {customer:document.getElementById('customer')?.value||'',phone:document.getElementById('phone')?.value||'',notes:document.getElementById('notes')?.value||''}}
 function change(id,d){const s=snapshot();qty[id]=Math.max(0,(qty[id]||0)+d);render(s)}
+function toggleAddon(pid,aid,on){const s=snapshot();const set=new Set(addons[pid]||[]);on?set.add(aid):set.delete(aid);addons[pid]=[...set];render(s)}
 function normalizePhone(v){let d=String(v||'').replace(/\D/g,'');if(d.length===10||d.length===11)d='55'+d;return d}
 function locationLabel(){return mode==='counter'?'Balcão / Retirada':ctx.table_name}
 function render(saved={}){
@@ -51,7 +53,7 @@ function render(saved={}){
  '<main><div class="sheet"><div class="intro"><h1>'+esc(locationLabel())+'</h1><p>'+
  (mode==='counter'?'Faça seu pedido e receba uma senha para retirada. Sem cadastro.':'Escolha seus itens e envie direto para a cozinha. Sem cadastro.')+
  '</p></div><div class="body">'+
- (ctx.categories||[]).map(c=>'<section class="cat"><h3>'+esc(c.name)+'</h3>'+(c.products||[]).map(p=>'<div class="row"><div><div class="name">'+esc(p.name)+'</div><div class="price">'+money(p.price)+'</div></div><div class="qty"><button onclick="change(\''+p.id+'\',-1)">−</button><b>'+(qty[p.id]||0)+'</b><button onclick="change(\''+p.id+'\',1)">+</button></div></div>').join('')+'</section>').join('')+
+ (ctx.categories||[]).map(c=>'<section class="cat"><h3>'+esc(c.name)+'</h3>'+(c.products||[]).map(p=>'<div class="row"><div><div class="name">'+esc(p.name)+'</div><div class="price">'+money(p.price)+'</div>'+((p.addons||[]).length?'<div class="addon-box"><div class="addon-title">Escolha os adicionais</div>'+(p.addons||[]).map(a=>'<label class="addon-opt"><input type="checkbox" '+((addons[p.id]||[]).includes(a.id)?'checked':'')+' onchange="toggleAddon(\''+p.id+'\',\''+a.id+'\',this.checked)"><span>'+esc(a.name)+'</span><span class="addon-price">'+(Number(a.price)>0?('+'+money(a.price)):'Grátis')+'</span></label>').join('')+'</div>':'')+'</div><div class="qty"><button onclick="change(\''+p.id+'\',-1)">−</button><b>'+(qty[p.id]||0)+'</b><button onclick="change(\''+p.id+'\',1)">+</button></div></div>').join('')+'</section>').join('')+
  '<div class="field"><label>Seu nome'+(mode==='counter'?' *':'')+'</label><input id="customer" placeholder="Ex.: João" value="'+esc(saved.customer||'')+'"><div class="hint">'+(mode==='counter'?'Necessário para chamar seu pedido.':'Usado apenas para identificar o pedido.')+'</div></div>'+
  '<div class="field"><label>WhatsApp (opcional)</label><input id="phone" inputmode="tel" placeholder="(21) 99999-9999" value="'+esc(saved.phone||'')+'"><div class="hint">Não cria conta. Serve apenas para contato deste pedido.</div></div>'+
  '<div class="field"><label>Observações</label><textarea id="notes" rows="3" placeholder="Ex.: sem cebola, carne bem passada...">'+esc(saved.notes||'')+'</textarea></div>'+
@@ -59,7 +61,7 @@ function render(saved={}){
  '<button class="send" onclick="sendOrder()">Enviar pedido para a cozinha</button></div></div></main>';
 }
 async function sendOrder(){
- const items=Object.entries(qty).filter(([,q])=>q>0).map(([product_id,qty])=>({product_id,qty}));
+ const items=Object.entries(qty).filter(([,q])=>q>0).map(([product_id,qty])=>({product_id,qty,addons:addons[product_id]||[]}));
  if(!items.length)return alert('Selecione pelo menos um item.');
  const customer=(document.getElementById('customer')?.value||'').trim();
  if(mode==='counter'&&!customer)return alert('Informe seu nome para identificarmos sua retirada.');
@@ -77,7 +79,7 @@ async function sendOrder(){
     ctx.session_epoch=r.session_epoch;
     ctx.table_occupied=true;
   }
-  qty={};
+  qty={};addons={};
   if(mode==='counter'){
     const senha=String(r.pickup_no).padStart(3,'0');
     document.getElementById('app').innerHTML='<main><div class="card center"><div class="ok">✅</div><h1>Pedido enviado!</h1><div class="ticket-label">Sua senha</div><div class="ticket">'+senha+'</div><div class="notice"><b>'+esc(customer)+'</b>, aguarde sua senha ser chamada para retirar o pedido.</div><h2>'+money(r.total)+'</h2><button class="send" onclick="render()">Fazer outro pedido</button></div></main>';
