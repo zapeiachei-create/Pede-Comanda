@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pede Comanda</title></head>
+<body>
+<script>
+(function(){
+  var p=location.pathname;
+  if(p==='/degusta'||p.indexOf('/degusta/')===0){
+    location.replace('/degusta/?path='+encodeURIComponent(p)+location.search);
+    return;
+  }
+  location.replace('/');
+})();
+</script>
+</body>
+</html>
