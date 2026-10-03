@@ -2,142 +2,16 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#7b0f1b">
-<title>Pede Comanda</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pede Comanda • Sistema Multilojas</title>
+<meta name="description" content="Pede Comanda — sua comanda digital online. Mesas, QR Code, garçom, balcão, retirada e cozinha.">
 <style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f7f3f1}
-#comandaFrame{display:block;width:100%;height:100%;border:0;background:#f7f3f1}
-</style>
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,Arial,sans-serif;background:#fff7f8;color:#231417}:root{--wine:#7b0f1b;--wine2:#a4162a;--muted:#755d62}.hero{min-height:92vh;background:radial-gradient(circle at 80% 10%,#b92239 0,#7b0f1b 40%,#43070d 100%);color:#fff;padding:28px 18px 55px}.wrap{max-width:1100px;margin:auto}.nav{display:flex;align-items:center;justify-content:space-between;gap:14px}.logo{display:flex;align-items:center;gap:12px}.icon{width:54px;height:54px;border-radius:15px;background:linear-gradient(145deg,#b51a2f,#750914 58%,#4d0710);box-shadow:0 10px 24px #26000688;display:grid;place-items:center;font-weight:1000;font-size:25px;letter-spacing:-4px}.logo-text strong{font-size:22px}.logo-text small{display:block;font-size:9px;letter-spacing:.23em;margin-top:3px}.pill{border:1px solid #ffffff55;padding:9px 13px;border-radius:999px;font-size:13px}.hero-grid{display:grid;grid-template-columns:1.12fr .88fr;align-items:center;gap:34px;padding-top:70px}h1{font-size:clamp(42px,7vw,76px);line-height:.96;margin:0 0 20px;letter-spacing:-.045em}.lead{font-size:20px;line-height:1.55;opacity:.93;max-width:680px}.price{font-size:58px;font-weight:900;margin:25px 0 3px}.price-label{opacity:.8}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:27px}.btn{display:inline-flex;align-items:center;justify-content:center;padding:15px 22px;border-radius:13px;text-decoration:none;font-weight:800}.btn-light{background:#fff;color:var(--wine)}.btn-outline{border:1px solid #ffffff7a;color:#fff}.mock{background:#fff;color:#222;border-radius:26px;padding:20px;box-shadow:0 35px 80px #26000666;transform:rotate(1.5deg)}.mock-head{background:linear-gradient(135deg,#7b0f1b,#a4162a);color:#fff;border-radius:18px;padding:20px}.mock-card{border:1px solid #eee;border-radius:16px;padding:15px;margin-top:12px}.order{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #eee}section{padding:70px 18px}.title{font-size:38px;margin:0 0 12px;letter-spacing:-.03em}.sub{color:var(--muted);max-width:760px;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:28px}.card{background:white;border:1px solid #f1dfe2;border-radius:20px;padding:23px;box-shadow:0 12px 30px #70101d0d}.card b{font-size:18px}.card p{color:var(--muted);line-height:1.5}.dark{background:#22070b;color:#fff}.dark .sub{color:#d9bdc3}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px}.step{border:1px solid #ffffff26;border-radius:18px;padding:22px}.num{width:38px;height:38px;border-radius:50%;background:#a4162a;display:grid;place-items:center;font-weight:900}.offer{background:#fff;border-radius:25px;padding:30px;color:#271519;display:grid;grid-template-columns:1fr auto;gap:25px;align-items:center;margin-top:30px}.offer strong{font-size:42px;color:var(--wine)}footer{padding:35px 18px;text-align:center;color:#80686d}@media(max-width:800px){.hero-grid,.grid,.steps,.offer{grid-template-columns:1fr}.hero-grid{padding-top:45px}.mock{transform:none}.price{font-size:48px}.pill{display:none}}
+.whatsapp-float{position:fixed;right:18px;bottom:18px;z-index:20;background:#25D366;color:#fff;text-decoration:none;font-weight:900;border-radius:999px;padding:14px 18px;box-shadow:0 12px 30px #0003}.whatsapp-float:hover{transform:translateY(-1px)}</style>
 </head>
 <body>
-<iframe id="comandaFrame" title="Pede Comanda"></iframe>
-<script>
-const frame=document.getElementById('comandaFrame');
-frame.src='legacy/index.html'+location.search;
-
-function widgetCss(){
-return `
-.pc-lead-cta{margin-top:14px;padding:9px 10px;border:1px solid #ead4d9;background:#fffafb;border-radius:12px;display:flex;align-items:center;gap:9px;text-align:left}
-.pc-lead-badge{width:30px;height:30px;min-width:30px;border-radius:9px;background:linear-gradient(135deg,#4d0710,var(--wine,#7b0f1b));color:#fff;display:grid;place-items:center;font-size:11px;font-weight:1000}
-.pc-lead-copy{min-width:0;flex:1}
-.pc-lead-cta h3{margin:0;font-size:12px;line-height:1.25;color:var(--wine,#7b0f1b)}
-.pc-lead-cta p{margin:2px 0 0;font-size:10.5px;line-height:1.25;color:#746b6b}
-.pc-lead-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}
-.pc-lead-btn{width:auto;border:0;border-radius:9px;padding:8px 10px;background:var(--wine,#7b0f1b);color:#fff;font-weight:900;font-size:10.5px;white-space:nowrap}
-.pc-help-btn{width:auto;border:0;background:transparent;color:#746b6b;font-weight:800;padding:5px 2px;font-size:9.5px;white-space:nowrap}
-@media(max-width:430px){.pc-lead-cta{align-items:flex-start}.pc-lead-actions{max-width:112px}.pc-lead-btn{padding:7px 8px;font-size:10px}.pc-help-btn{font-size:9px}}
-.pc-lead-modal{position:fixed;inset:0;z-index:9999;background:#24020899;display:grid;place-items:center;padding:16px;overflow:auto}
-.pc-lead-modal.pc-hidden{display:none}
-.pc-lead-card{position:relative;width:min(520px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:20px;padding:18px;box-shadow:0 28px 80px #24020855}
-.pc-lead-close{position:absolute;right:12px;top:12px;width:36px;height:36px;border:0;border-radius:50%;background:#f6e6e9;color:var(--wine,#7b0f1b);font-size:21px;font-weight:900}
-.pc-lead-card h2{margin:2px 42px 5px 0;color:var(--wine,#7b0f1b);font-size:22px}
-.pc-lead-sub{margin:0 0 15px;color:#746b6b;font-size:13px;line-height:1.4}
-.pc-field{display:grid;gap:6px;margin-bottom:12px}
-.pc-field label{font-size:13px;font-weight:800;color:#594d4d}
-.pc-field input,.pc-field select{width:100%;box-sizing:border-box;border:1px solid #dfd1cd;border-radius:11px;background:#fff;padding:11px 12px;outline:0;font:inherit}
-.pc-field input:focus,.pc-field select:focus{border-color:var(--wine,#7b0f1b);box-shadow:0 0 0 3px #f5d8de}
-.pc-lead-send{width:100%;border:0;border-radius:13px;padding:14px;background:linear-gradient(135deg,#1e9c50,#16823f);color:#fff;font-weight:900;font-size:15px}
-.pc-lead-note{text-align:center;color:#746b6b;font-size:11px;margin:9px 0 0}
-`;
-}
-
-function widgetHtml(){
-return '<div class="pc-lead-cta" id="pcLeadCta">'+
-'<div class="pc-lead-badge">PC</div>'+
-'<div class="pc-lead-copy"><h3>Quer o Pede Comanda no seu negócio?</h3><p>Teste grátis por 7 dias.</p></div>'+
-'<div class="pc-lead-actions"><button class="pc-lead-btn" id="pcOpenLead">Criar conta</button><button class="pc-help-btn" id="pcHelpLead">Ajuda</button></div>'+
-'</div>';
-}
-
-function modalHtml(){
-return '<div id="pcLeadModal" class="pc-lead-modal pc-hidden">'+
-'<div class="pc-lead-card">'+
-'<button class="pc-lead-close" id="pcCloseLead" aria-label="Fechar">×</button>'+
-'<h2>Quero o Pede Comanda</h2>'+
-'<p class="pc-lead-sub">Preencha rapidinho. Ao finalizar, sua mensagem será enviada pelo WhatsApp.</p>'+
-'<div class="pc-field"><label>Seu nome *</label><input id="pcLeadName" placeholder="Ex.: João da Silva"></div>'+
-'<div class="pc-field"><label>Nome do estabelecimento *</label><input id="pcLeadBusiness" placeholder="Ex.: Lanchonete do João"></div>'+
-'<div class="pc-field"><label>Seu WhatsApp *</label><input id="pcLeadPhone" inputmode="tel" placeholder="(21) 99999-9999"></div>'+
-'<div class="pc-field"><label>Tipo de negócio</label><select id="pcLeadType"><option>Restaurante</option><option>Lanchonete</option><option>Trailer / Food Truck</option><option>Bar / Petiscaria</option><option>Pastelaria</option><option>Pizzaria</option><option>Outro</option></select></div>'+
-'<div class="pc-field"><label>Cidade</label><input id="pcLeadCity" placeholder="Ex.: Nova Iguaçu"></div>'+
-'<div class="pc-field"><label>Quantas mesas aproximadamente?</label><select id="pcLeadTables"><option>Sem mesas / Retirada</option><option>1 a 10</option><option>11 a 30</option><option>31 a 50</option><option>Mais de 50</option></select></div>'+
-'<button class="pc-lead-send" id="pcSendLead">QUERO MINHA COMANDA</button>'+
-'<p class="pc-lead-note">Você será direcionado para o WhatsApp do Pede Comanda.</p>'+
-'</div></div>';
-}
-
-function injectWidget(){
- const d=frame.contentDocument;
- if(!d||!d.body)return;
- if(!d.getElementById('pcLeadStyles')){
-   const s=d.createElement('style'); s.id='pcLeadStyles'; s.textContent=widgetCss(); d.head.appendChild(s);
- }
- let target=d.querySelector('.sheet .body');
- if(!target){
-   const success=[...d.querySelectorAll('main .card')].find(el=>(el.textContent||'').includes('Pedido enviado!'));
-   if(success) target=success;
- }
- if(!target)return;
- if(!d.getElementById('pcLeadCta')) target.insertAdjacentHTML('beforeend',widgetHtml());
- if(!d.getElementById('pcLeadModal')) d.body.insertAdjacentHTML('beforeend',modalHtml());
-
- const modal=d.getElementById('pcLeadModal');
- const open=d.getElementById('pcOpenLead');
- const close=d.getElementById('pcCloseLead');
- const send=d.getElementById('pcSendLead');
- const help=d.getElementById('pcHelpLead');
-
- if(open&&!open.dataset.bound){
-   open.dataset.bound='1';
-   open.addEventListener('click',()=>{window.top.location.href='sistema/?signup=1'});
- }
- if(help&&!help.dataset.bound){
-   help.dataset.bound='1';
-   help.addEventListener('click',()=>{window.top.location.href='https://wa.me/5521972043295?text='+encodeURIComponent('Olá! Preciso de ajuda para configurar meu Pede Comanda.')});
- }
- if(close&&!close.dataset.bound){
-   close.dataset.bound='1';
-   close.addEventListener('click',()=>{modal.classList.add('pc-hidden');d.body.style.overflow=''});
- }
- if(modal&&!modal.dataset.bound){
-   modal.dataset.bound='1';
-   modal.addEventListener('click',e=>{if(e.target===modal){modal.classList.add('pc-hidden');d.body.style.overflow=''}});
- }
- if(send&&!send.dataset.bound){
-   send.dataset.bound='1';
-   send.addEventListener('click',()=>{
-     const name=(d.getElementById('pcLeadName')?.value||'').trim();
-     const establishment=(d.getElementById('pcLeadBusiness')?.value||'').trim();
-     const phone=(d.getElementById('pcLeadPhone')?.value||'').trim();
-     const type=d.getElementById('pcLeadType')?.value||'Não informado';
-     const city=(d.getElementById('pcLeadCity')?.value||'').trim()||'Não informada';
-     const tables=d.getElementById('pcLeadTables')?.value||'Não informado';
-     if(!name||!establishment||!phone){frame.contentWindow.alert('Preencha seu nome, o nome do estabelecimento e seu WhatsApp.');return;}
-     const source=(d.querySelector('header b')?.textContent||'Pede Comanda').trim();
-     const msg='Olá! 👋 Vim através do Pede Comanda e tenho interesse em ter uma comanda digital no meu negócio.\n\n'+
-     '👤 Nome: '+name+'\n'+
-     '🏪 Estabelecimento: '+establishment+'\n'+
-     '📱 WhatsApp: '+phone+'\n'+
-     '🍔 Tipo de negócio: '+type+'\n'+
-     '📍 Cidade: '+city+'\n'+
-     '🪑 Mesas: '+tables+'\n\n'+
-     '🔗 Conheci o Pede Comanda através de: '+source+'\n\n'+
-     'Gostaria de saber mais sobre o Pede Comanda.';
-     window.top.location.href='https://wa.me/5521972043295?text='+encodeURIComponent(msg);
-   });
- }
-}
-
-frame.addEventListener('load',()=>{
- injectWidget();
- const d=frame.contentDocument;
- const app=d?.getElementById('app');
- if(app){
-   const observer=new MutationObserver(()=>setTimeout(injectWidget,0));
-   observer.observe(app,{childList:true,subtree:true});
- }
-});
-</script>
-</body>
-</html>
+<header class="hero"><div class="wrap"><div class="nav"><div class="logo"><div class="icon">PC</div><div class="logo-text"><strong>Pede Comanda</strong><small>SISTEMA MULTILOJAS</small></div></div><div class="pill">Sua comanda digital online</div></div><div class="hero-grid"><div><h1>Menos papel.<br>Mais agilidade.</h1><p class="lead">Mesas, QR Code, garçom, balcão, retirada e cozinha no mesmo sistema. Simples para a equipe e fácil para o cliente.</p><div class="price">R$ 49,90<span style="font-size:.38em">/mês</span></div><div class="price-label">Preço de lançamento</div><div class="actions"><a class="btn btn-light" href="https://wa.me/5521972043295?text=Ol%C3%A1%21%20Quero%20conhecer%20o%20Pede%20Comanda%20e%20saber%20como%20funciona%20o%20plano%20de%20lan%C3%A7amento%20de%20R%24%2049%2C90%2Fm%C3%AAs." target="_blank" rel="noopener">Quero conhecer</a><a class="btn btn-outline" href="#recursos">Ver recursos</a></div></div><div class="mock"><div class="mock-head"><b>Pede Comanda</b><div style="opacity:.8;margin-top:5px">Pedido #1042 • Mesa 07</div></div><div class="mock-card"><div class="order"><span>2× Hambúrguer</span><b>R$ 36,00</b></div><div class="order"><span>1× Batata</span><b>R$ 12,00</b></div><div class="order"><span>2× Refrigerante</span><b>R$ 14,00</b></div><div style="display:flex;justify-content:space-between;padding-top:14px;font-size:20px"><b>Total</b><b style="color:#7b0f1b">R$ 62,00</b></div></div></div></div></div></header>
+<section id="recursos"><div class="wrap"><h2 class="title">Tudo o que o atendimento precisa</h2><p class="sub">O Pede Comanda foi pensado para restaurantes, lanchonetes, bares, trailers, food trucks, pizzarias, hamburguerias, açaíterias, cafeterias e outros pontos de venda.</p><div class="grid"><div class="card"><b>📲 QR Code</b><p>O cliente acessa a comanda pelo celular sem precisar criar conta.</p></div><div class="card"><b>🧑‍💼 Garçom e equipe</b><p>A equipe lança pedidos rapidamente pelo celular.</p></div><div class="card"><b>🍽️ Mesas</b><p>Organize comandas por mesa e acompanhe cada atendimento.</p></div><div class="card"><b>🛍️ Balcão e retirada</b><p>Ideal para trailer e food truck, com senha automática de retirada.</p></div><div class="card"><b>👨‍🍳 Cozinha</b><p>Pedidos organizados para facilitar o preparo e reduzir confusão.</p></div><div class="card"><b>🏪 Multilojas</b><p>Estrutura preparada para operar mais de um estabelecimento.</p></div></div></div></section>
+<section class="dark"><div class="wrap"><h2 class="title">Do pedido ao preparo</h2><p class="sub">Uma experiência simples para quem compra e para quem atende.</p><div class="steps"><div class="step"><div class="num">1</div><h3>Cliente pede</h3><p>Pelo QR Code, link ou comanda da equipe.</p></div><div class="step"><div class="num">2</div><h3>Pedido entra</h3><p>O sistema organiza mesa, balcão ou retirada.</p></div><div class="step"><div class="num">3</div><h3>Cozinha prepara</h3><p>A equipe acompanha o pedido e atualiza o atendimento.</p></div></div><div class="offer"><div><h3 style="margin:0 0 7px;font-size:28px">Preço especial de lançamento</h3><p style="margin:0;color:#755d62">Modernize seu atendimento sem complicação.</p></div><div><strong>R$ 49,90</strong><div>/mês</div></div></div><div class="actions" style="justify-content:center;margin-top:28px"><a class="btn btn-light" href="https://wa.me/5521972043295?text=Ol%C3%A1%21%20Quero%20conhecer%20o%20Pede%20Comanda%20e%20saber%20como%20funciona%20o%20plano%20de%20lan%C3%A7amento%20de%20R%24%2049%2C90%2Fm%C3%AAs." target="_blank" rel="noopener">QUERO CONHECER</a></div></div></section>
+<footer>Pede Comanda • Sistema Multilojas • Sua comanda digital online</footer>
+<a class="whatsapp-float" href="https://wa.me/5521972043295?text=Ol%C3%A1%21%20Quero%20conhecer%20o%20Pede%20Comanda%20e%20saber%20como%20funciona%20o%20plano%20de%20lan%C3%A7amento%20de%20R%24%2049%2C90%2Fm%C3%AAs." target="_blank" rel="noopener">WhatsApp</a></body></html>
