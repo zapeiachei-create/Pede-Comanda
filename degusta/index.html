@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#7b0f1b">
+<title>Pede Comanda</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#f7f3f1;font-family:Arial,sans-serif}
+#app{width:100%;height:100%}
+iframe{display:block;width:100%;height:100%;border:0;background:#f7f3f1}
+.loading,.error{min-height:100%;display:grid;place-items:center;padding:22px;box-sizing:border-box;background:linear-gradient(135deg,#4c0710,#7b0f1b)}
+.card{width:min(520px,100%);background:#fff;border-radius:20px;padding:22px;box-sizing:border-box;box-shadow:0 24px 70px #24020855;text-align:center}
+.spinner{width:42px;height:42px;border:4px solid #ead4d9;border-top-color:#7b0f1b;border-radius:50%;margin:0 auto 14px;animation:s .8s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}a{display:inline-block;margin-top:12px;background:#7b0f1b;color:#fff;text-decoration:none;padding:12px 16px;border-radius:11px;font-weight:800}
+</style>
+</head>
+<body>
+<div id="app"><div class="loading"><div class="card"><div class="spinner"></div><b>Abrindo sua comanda...</b></div></div></div>
+<script>
+const SUPABASE_URL='https://aajpumelbbgutmeackuu.supabase.co';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhanB1bWVsYmJndXRtZWFja3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzUwODQsImV4cCI6MjA3NTAxMTA4NH0.6SoJ0vQy5F33IOeVjMllxPv7SlST6dpaGJMlvPceLVk';
+const app=document.getElementById('app');
+function fail(msg){
+  app.innerHTML='<div class="error"><div class="card"><h2>Não foi possível abrir</h2><p>'+String(msg||'Link inválido').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]))+'</p><a href="/">Voltar ao Pede Comanda</a></div></div>';
+}
+function openFrame(src){
+  app.innerHTML='<iframe title="Pede Comanda" src="'+src.replace(/"/g,'&quot;')+'"></iframe>';
+}
+async function rpc(name,body){
+  const res=await fetch(SUPABASE_URL+'/rest/v1/rpc/'+name,{
+    method:'POST',
+    headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  });
+  const txt=await res.text();let out={};
+  try{out=txt?JSON.parse(txt):{}}catch{out={message:txt}}
+  if(!res.ok)throw new Error(out?.message||out?.error||'Não foi possível abrir esta comanda.');
+  return out;
+}
+(async()=>{
+  const u=new URL(location.href);
+  let path=u.searchParams.get('path')||'';
+  if(path){
+    try{path=decodeURIComponent(path)}catch(_){}
+    if(!path.startsWith('/'))path='/'+path;
+    history.replaceState(null,'',path);
+  }else{
+    path=location.pathname;
+  }
+  const parts=path.split('/').filter(Boolean);
+  if(parts[0]!=='degusta')return location.replace('/');
+  const slug=parts[1]||u.searchParams.get('loja')||'';
+  if(!slug)return location.replace('/');
+  const mesa=parts[2]||'';
+  if(/^mesa-\d+$/i.test(mesa)){
+    const no=parseInt(mesa.match(/\d+/)[0],10);
+    try{
+      const r=await rpc('pc_resolve_pretty_table',{p_business_slug:slug,p_table_no:no});
+      return openFrame('/sistema/?qr='+encodeURIComponent(r.qr_token));
+    }catch(e){return fail(e.message)}
+  }
+  openFrame('/sistema/?loja='+encodeURIComponent(slug));
+})().catch(e=>fail(e.message));
+</script>
+</body>
+</html>
