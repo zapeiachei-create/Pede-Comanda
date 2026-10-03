@@ -93,7 +93,7 @@
 .help-steps{display:grid;gap:9px}.help-step{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:13px;padding:10px 12px}.help-step-num{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#f6e3e7;color:var(--wine);font-weight:1000}.help-step b{display:block;margin-bottom:2px}.help-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}
 .help-actions .btn{flex:1 1 180px}
 .video-placeholder{border:1px dashed #cfb6ba;border-radius:13px;padding:12px;background:#fffafa;margin-top:14px}
-@media(max-width:900px){.help-fab{bottom:74px;right:10px;padding:11px 13px}.help-fab span{display:none}.screen-help{align-items:stretch;flex-direction:column}.screen-help .btn{width:100%}}
+@media(max-width:900px){.help-fab{bottom:74px;right:10px;padding:11px 13px}.help-fab span{display:none}.screen-help{align-items:stretch;flex-direction:column}.screen-help .btn{width:100%}.customer-payment-grid{grid-template-columns:1fr!important}}
 
 </style>
 </head>
@@ -618,6 +618,47 @@ function choosePixPlan(plan){if(!PIX_PLANS[plan])return;selectedPixPlan=plan;ren
 function copyPixKey(){copyPaymentText(PIX_PAYMENT_KEY,'Chave Pix copiada.')}
 function copyPixCode(){copyPaymentText(pixPayload(PIX_PLANS[selectedPixPlan].amount),'Pix Copia e Cola copiado.')}
 function sendPixReceipt(){const p=PIX_PLANS[selectedPixPlan];const msg='Olá! Já fiz o pagamento do Pede Comanda. Estabelecimento: '+(business?.name||'')+'. Plano: '+p.label+' - '+money(p.amount)+'. Vou enviar o comprovante.';window.open('https://wa.me/'+SUPPORT_WHATSAPP+'?text='+encodeURIComponent(msg),'_blank')}
+function pixAscii(value,maxLen){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9 .\-]/g,'').toUpperCase().trim().slice(0,maxLen)}
+function storePixPayload(amount){
+  const key=String(staffSession?.customer_pix_key||'').trim();
+  if(!key)return '';
+  const merchant=pixAscii(staffSession?.business_name||'LOJA',25)||'LOJA';
+  const city=pixAscii(staffSession?.customer_pix_city||'RIO DE JANEIRO',15)||'RIO DE JANEIRO';
+  const account=pixField('00','BR.GOV.BCB.PIX')+pixField('01',key);
+  const extra=pixField('05','***');
+  let payload=pixField('00','01')+pixField('01','11')+pixField('26',account)+pixField('52','0000')+pixField('53','986')+pixField('54',Number(amount).toFixed(2))+pixField('58','BR')+pixField('59',merchant)+pixField('60',city)+pixField('62',extra)+'6304';
+  return payload+pixCrc16(payload);
+}
+function copyStorePix(total){const code=storePixPayload(total);if(!code)return toast('A loja ainda não configurou o Pix.');copyPaymentText(code,'Pix Copia e Cola copiado.')}
+function copyStorePixKey(){const key=String(staffSession?.customer_pix_key||'').trim();if(!key)return toast('A loja ainda não configurou o Pix.');copyPaymentText(key,'Chave Pix copiada.')}
+function openCustomerReceipt(orderNo,total,pickupNo){
+  const phone=String(staffSession?.customer_payment_whatsapp||staffSession?.kitchen_whatsapp||'').replace(/\D/g,'');
+  if(!phone)return toast('A loja ainda não cadastrou o WhatsApp para comprovantes.');
+  const ref=pickupNo?('Senha '+String(pickupNo).padStart(3,'0')+' / Pedido #'+orderNo):('Pedido #'+orderNo);
+  const msg='Olá! Já fiz o pagamento via Pix. '+ref+' • Valor '+money(total)+'. Vou enviar o comprovante agora.';
+  window.open('https://wa.me/'+phone+'?text='+encodeURIComponent(msg),'_blank')
+}
+function customerPaymentHtml(orderNo,total,pickupNo){
+  const key=String(staffSession?.customer_pix_key||'').trim();
+  if(!key)return `<div style="margin:18px 0 14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff"><h3 style="margin:0 0 6px">Pagamento</h3><div class="muted">Pix ainda não configurado por esta loja. Para cartão ou dinheiro, pague no caixa.</div></div>`;
+  const code=storePixPayload(total);
+  const qr='https://api.qrserver.com/v1/create-qr-code/?size=320x320&margin=8&data='+encodeURIComponent(code);
+  return `<div style="margin:18px 0 14px;padding:14px;border:1px solid var(--line);border-radius:14px;background:#fff;text-align:left">
+    <h3 style="margin:0 0 4px">💳 Como deseja pagar?</h3>
+    <div class="muted small" style="margin-bottom:12px">Você pode pagar agora por Pix ou pagar no caixa com cartão/dinheiro.</div>
+    <div class="customer-payment-grid" style="display:grid;grid-template-columns:minmax(150px,190px) 1fr;gap:14px;align-items:start">
+      <div style="text-align:center"><img src="${qr}" alt="QR Code Pix da loja" style="width:180px;height:180px;max-width:100%;background:#fff;padding:7px;border-radius:12px;border:1px solid var(--line)"><div class="small muted" style="margin-top:5px">Pix • ${money(total)}</div></div>
+      <div>
+        <b>📲 Pagar com Pix</b>
+        <div class="small muted" style="margin:4px 0 8px">Chave: ${esc(key)}</div>
+        <button class="btn btn-secondary btn-block btn-sm" onclick="copyStorePixKey()">Copiar chave Pix</button>
+        <button class="btn btn-primary btn-block btn-sm" style="margin-top:7px" onclick="copyStorePix(${Number(total)})">Copiar Pix Copia e Cola</button>
+        <button class="btn btn-soft btn-block btn-sm" style="margin-top:7px" onclick="openCustomerReceipt('${orderNo}',${Number(total)},${pickupNo?Number(pickupNo):'null'})">Já paguei / enviar comprovante</button>
+        <div style="margin-top:12px;padding:10px;border-radius:10px;background:#f7f3f1"><b>💳 Cartão ou dinheiro</b><div class="small muted" style="margin-top:3px">Pague no caixa ao finalizar o atendimento.</div></div>
+      </div>
+    </div>
+  </div>`;
+}
 
 function planAdminView(){
   const s=subscriptionInfo();
@@ -648,10 +689,31 @@ function planAdminView(){
   </div>`
 }
 
-function settingsAdminView(){const colors=['#7b0f1b','#981b2b','#b42334','#7a2e52','#5b1733','#702632'];const mode=business.service_mode||'tables';return `<div class="page-head"><div><h1>Configurações</h1><div class="muted">Logo, cor, atendimento e destino dos pedidos.</div></div></div><div class="grid grid-2"><div class="card"><h2>Identidade do estabelecimento</h2><div class="field"><label>Nome</label><input id="setName" value="${esc(business.name)}"></div><div class="field"><label>Logo da empresa</label><input type="file" id="setLogo" accept="image/*" onchange="readLogo(this)"></div><div class="inline" style="margin-bottom:12px">${(logoData||business.logo_url)?`<img class="logo-preview" src="${esc(logoData||business.logo_url)}">`:`<div class="logo-preview" style="display:grid;place-items:center;color:#8a7777">Sua logo</div>`}<div class="muted small">Aparece no painel, na comanda do garçom e no pedido do cliente.</div></div><div class="field"><label>Cor principal</label><div class="color-row">${colors.map(c=>`<button class="color-dot" style="background:${c}" title="${c}" onclick="$('#setColor').value='${c}';setTheme('${c}')"></button>`).join('')}</div><input id="setColor" type="color" value="${esc(business.theme_color)}" style="margin-top:8px"></div><button class="btn btn-primary" onclick="saveIdentity()">Salvar identidade</button></div><div class="card"><h2>Operação</h2><div class="field"><label>Tipo de atendimento</label><select id="setMode"><option value="tables" ${mode==='tables'?'selected':''}>Mesas</option><option value="counter" ${mode==='counter'?'selected':''}>Balcão / Retirada (trailer, food truck, quiosque)</option><option value="mixed" ${mode==='mixed'?'selected':''}>Misto — mesas + balcão/retirada</option></select><div class="muted small">No modo Balcão, o cliente recebe uma senha automática. No modo Misto, os dois formatos ficam ativos.</div></div><div class="field"><label>Código da empresa</label><input value="${esc(business.slug)}" disabled></div><div class="field"><label>WhatsApp da cozinha *</label><input id="setWpp" inputmode="tel" value="${esc(business.kitchen_whatsapp||'')}" placeholder="(21) 99999-9999"><div class="muted small">Este é o número que receberá os pedidos desta loja.</div></div><div class="field"><label>Endereço público do Pede Comanda</label><input value="${PUBLIC_CLIENT_BASE}" disabled><div class="muted small">O sistema gera links de mesa e também um link geral para balcão/retirada.</div></div><button class="btn btn-primary" onclick="saveOperation()">Salvar operação</button><div class="success-note" style="margin-top:14px">Pedidos por mesa, balcão e garçom ficam centralizados na mesma cozinha.</div></div></div>`}
+function settingsAdminView(){const colors=['#7b0f1b','#981b2b','#b42334','#7a2e52','#5b1733','#702632'];const mode=business.service_mode||'tables';return `<div class="page-head"><div><h1>Configurações</h1><div class="muted">Logo, cor, atendimento e destino dos pedidos.</div></div></div><div class="grid grid-2"><div class="card"><h2>Identidade do estabelecimento</h2><div class="field"><label>Nome</label><input id="setName" value="${esc(business.name)}"></div><div class="field"><label>Logo da empresa</label><input type="file" id="setLogo" accept="image/*" onchange="readLogo(this)"></div><div class="inline" style="margin-bottom:12px">${(logoData||business.logo_url)?`<img class="logo-preview" src="${esc(logoData||business.logo_url)}">`:`<div class="logo-preview" style="display:grid;place-items:center;color:#8a7777">Sua logo</div>`}<div class="muted small">Aparece no painel, na comanda do garçom e no pedido do cliente.</div></div><div class="field"><label>Cor principal</label><div class="color-row">${colors.map(c=>`<button class="color-dot" style="background:${c}" title="${c}" onclick="$('#setColor').value='${c}';setTheme('${c}')"></button>`).join('')}</div><input id="setColor" type="color" value="${esc(business.theme_color)}" style="margin-top:8px"></div><button class="btn btn-primary" onclick="saveIdentity()">Salvar identidade</button></div><div class="card"><h2>Operação</h2><div class="field"><label>Tipo de atendimento</label><select id="setMode"><option value="tables" ${mode==='tables'?'selected':''}>Mesas</option><option value="counter" ${mode==='counter'?'selected':''}>Balcão / Retirada (trailer, food truck, quiosque)</option><option value="mixed" ${mode==='mixed'?'selected':''}>Misto — mesas + balcão/retirada</option></select><div class="muted small">No modo Balcão, o cliente recebe uma senha automática. No modo Misto, os dois formatos ficam ativos.</div></div><div class="field"><label>Código da empresa</label><input value="${esc(business.slug)}" disabled></div><div class="field"><label>WhatsApp da cozinha *</label><input id="setWpp" inputmode="tel" value="${esc(business.kitchen_whatsapp||'')}" placeholder="(21) 99999-9999"><div class="muted small">Este é o número que receberá os pedidos desta loja.</div></div><div class="field"><label>Endereço público do Pede Comanda</label><input value="${PUBLIC_CLIENT_BASE}" disabled><div class="muted small">O sistema gera links de mesa e também um link geral para balcão/retirada.</div></div><button class="btn btn-primary" onclick="saveOperation()">Salvar operação</button><div class="success-note" style="margin-top:14px">Pedidos por mesa, balcão e garçom ficam centralizados na mesma cozinha.</div></div></div>
+<div class="card" style="margin-top:14px"><h2>Pagamento do cliente</h2><p class="muted">Configure o Pix que aparecerá na comanda desta loja. Se deixar a chave em branco, o pagamento Pix não será exibido.</p>
+<div class="grid grid-2">
+  <div class="field"><label>Chave Pix da loja</label><input id="setCustomerPixKey" value="${esc(business.customer_pix_key||'')}" placeholder="CPF, CNPJ, e-mail, +55... ou chave aleatória"><div class="muted small">Digite exatamente como a chave está cadastrada no banco. Para telefone, prefira o formato +5521999999999.</div></div>
+  <div class="field"><label>Cidade do Pix</label><input id="setCustomerPixCity" value="${esc(business.customer_pix_city||'RIO DE JANEIRO')}" placeholder="RIO DE JANEIRO"><div class="muted small">Usada para gerar o QR Code Pix.</div></div>
+</div>
+<div class="field"><label>WhatsApp para comprovantes</label><input id="setCustomerPaymentWpp" inputmode="tel" value="${esc(business.customer_payment_whatsapp||'')}" placeholder="Deixe vazio para usar o WhatsApp da cozinha"><div class="muted small">O cliente poderá abrir este número para enviar o comprovante. Se ficar vazio, usaremos o WhatsApp da cozinha.</div></div>
+<button class="btn btn-primary" onclick="saveCustomerPaymentSettings()">Salvar pagamento</button></div>`}
 function readLogo(inp){const f=inp.files?.[0];if(!f)return;if(f.size>600000)return toast('Use uma logo de até 600 KB nesta primeira versão.');const r=new FileReader();r.onload=()=>{logoData=r.result;renderAdmin();setTimeout(()=>go('settings'),0)};r.readAsDataURL(f)}
 async function saveIdentity(){try{const payload={name:$('#setName').value.trim()||business.name,theme_color:$('#setColor').value};if(logoData)payload.logo_url=logoData;const arr=await rest('pc_businesses',`id=eq.${business.id}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(payload)});business=arr[0];logoData='';setTheme(business.theme_color);renderAdmin();toast('Identidade salva.')}catch(e){toast(e.message)}}
 async function saveOperation(){try{const wpp=normalizeCustomerPhone($('#setWpp').value);if(!wpp||wpp.length<12)return toast('Informe o WhatsApp da cozinha com DDD.');const payload={kitchen_whatsapp:wpp,public_base_url:PUBLIC_CLIENT_BASE,service_mode:$('#setMode').value};const arr=await rest('pc_businesses',`id=eq.${business.id}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(payload)});business=arr[0];renderAdmin();toast('WhatsApp da cozinha salvo. Os pedidos desta loja irão para esse número.')}catch(e){toast(e.message)}}
+async function saveCustomerPaymentSettings(){
+  try{
+    const key=String($('#setCustomerPixKey')?.value||'').trim();
+    const city=pixAscii($('#setCustomerPixCity')?.value||'RIO DE JANEIRO',15)||'RIO DE JANEIRO';
+    const rawPhone=String($('#setCustomerPaymentWpp')?.value||'').trim();
+    const phone=rawPhone?normalizeCustomerPhone(rawPhone):null;
+    if(rawPhone&&(!phone||phone.length<12))return toast('Informe um WhatsApp de comprovantes válido ou deixe em branco.');
+    const payload={customer_pix_key:key||null,customer_pix_city:city,customer_payment_whatsapp:phone};
+    const arr=await rest('pc_businesses',`id=eq.${business.id}`,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(payload)});
+    business=arr[0];
+    renderAdmin();
+    toast(key?'Pagamento Pix da loja salvo.':'Pix da loja desativado.')
+  }catch(e){toast(e.message)}
+}
 function openStaffLoginHint(){alert(`Para usar como garçom/atendente:\n\n1. Cadastre o funcionário em Equipe.\n2. Saia do administrador.\n3. Entre em Equipe / Garçom.\n4. Código da empresa: ${business.slug}\n5. Use o PIN cadastrado.`)}
 function logoutAdmin(){clearPoll();session=null;user=null;business=null;localStorage.removeItem('pc_auth');renderAuth('admin')}
 
@@ -748,7 +810,7 @@ async function submitCounterOrder(slug){
   try{
     const r=await rpc('pc_place_counter_order',{p_business_slug:slug,p_items:items,p_notes:draft.notes||null,p_customer_name:draft.customer||null,p_customer_whatsapp:(String(draft.whatsapp||'').replace(/\D/g,'')?((String(draft.whatsapp||'').replace(/\D/g,'').length===10||String(draft.whatsapp||'').replace(/\D/g,'').length===11)&&!String(draft.whatsapp||'').replace(/\D/g,'').startsWith('55')?'55'+String(draft.whatsapp||'').replace(/\D/g,''):String(draft.whatsapp||'').replace(/\D/g,'')):null)},false);
     draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:''};
-    document.getElementById('app').innerHTML=`<div class="onboard"><div class="card" style="text-align:center"><div style="font-size:52px">✅</div><h1>Pedido enviado!</h1><p>Pedido <b>#${r.order_no}</b></p><div class="trial-pill" style="font-size:18px;margin:12px auto">Sua senha: ${String(r.pickup_no).padStart(3,'0')}</div><h2>${money(r.total)}</h2><p class="muted">Aguarde a chamada no balcão.</p><div style="display:grid;gap:10px;max-width:320px;margin:0 auto"><button class="btn btn-primary" onclick="renderCounter('${esc(slug)}')">Fazer outro pedido</button><button class="btn btn-soft" onclick="location.href='/'">Sair</button></div></div></div>`;
+    document.getElementById('app').innerHTML=`<div class="onboard"><div class="card" style="text-align:center"><div style="font-size:52px">✅</div><h1>Pedido enviado!</h1><p>Pedido <b>#${r.order_no}</b></p><div class="trial-pill" style="font-size:18px;margin:12px auto">Sua senha: ${String(r.pickup_no).padStart(3,'0')}</div><h2>${money(r.total)}</h2><p class="muted">Aguarde a chamada no balcão.</p>${customerPaymentHtml(r.order_no,r.total,r.pickup_no)}<div style="display:grid;gap:10px;max-width:320px;margin:0 auto"><button class="btn btn-primary" onclick="renderCounter('${esc(slug)}')">Fazer outro pedido</button><button class="btn btn-soft" onclick="location.href='/'">Sair</button></div></div></div>`;
   }catch(e){toast(e.message)}
 }
 
@@ -761,7 +823,7 @@ function qrMenuLine(p){
   const q=draft.qty[p.id]||0;return `<div class="menu-row"><div><b>${esc(p.name)}</b><div class="muted">${money(p.price)}</div></div><div class="qty"><button onclick="qrQty('${p.id}',-1)">−</button><span>${q}</span><button onclick="qrQty('${p.id}',1)">+</button></div><div class="price">${money(Number(p.price)*q)}</div></div>`
 }
 function qrQty(id,d){draft.qty[id]=Math.max(0,(draft.qty[id]||0)+d);renderQR(new URL(location.href).searchParams.get('qr'))}
-async function submitQROrder(token){const items=Object.entries(draft.qty).filter(([,q])=>q>0).map(([product_id,qty])=>({product_id,qty,addons:[],variant_id:null})).concat((draft.lines||[]).map(l=>({product_id:l.product_id,qty:Math.max(1,Number(l.qty||1)),addons:l.addons||[],variant_id:l.variant_id||null})));if(!items.length)return toast('Selecione pelo menos um item.');try{const r=await rpc('pc_place_qr_order_v2',{p_qr_token:token,p_items:items,p_notes:draft.notes||null,p_customer_name:draft.customer||null,p_customer_whatsapp:(String(draft.whatsapp||'').replace(/\D/g,'')?((String(draft.whatsapp||'').replace(/\D/g,'').length===10||String(draft.whatsapp||'').replace(/\D/g,'').length===11)&&!String(draft.whatsapp||'').replace(/\D/g,'').startsWith('55')?'55'+String(draft.whatsapp||'').replace(/\D/g,''):String(draft.whatsapp||'').replace(/\D/g,'')):null),p_table_session_token:staffSession.table_session_token||null,p_session_epoch:staffSession.session_epoch},false);staffSession.table_session_token=r.table_session_token;staffSession.session_epoch=r.session_epoch;draft={tableId:staffSession.table_id,qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:''};document.getElementById('app').innerHTML=`<div class="onboard"><div class="card" style="text-align:center"><div style="font-size:52px">✅</div><h1>Pedido enviado!</h1><p>Pedido <b>#${r.order_no}</b> recebido pela cozinha.</p><h2>${money(r.total)}</h2><div style="display:grid;gap:10px;max-width:320px;margin:0 auto"><button class="btn btn-primary" onclick="renderQR('${token}')">Fazer outro pedido</button><button class="btn btn-soft" onclick="location.href='/'">Sair</button></div></div></div>`}catch(e){toast(e.message)}}
+async function submitQROrder(token){const items=Object.entries(draft.qty).filter(([,q])=>q>0).map(([product_id,qty])=>({product_id,qty,addons:[],variant_id:null})).concat((draft.lines||[]).map(l=>({product_id:l.product_id,qty:Math.max(1,Number(l.qty||1)),addons:l.addons||[],variant_id:l.variant_id||null})));if(!items.length)return toast('Selecione pelo menos um item.');try{const r=await rpc('pc_place_qr_order_v2',{p_qr_token:token,p_items:items,p_notes:draft.notes||null,p_customer_name:draft.customer||null,p_customer_whatsapp:(String(draft.whatsapp||'').replace(/\D/g,'')?((String(draft.whatsapp||'').replace(/\D/g,'').length===10||String(draft.whatsapp||'').replace(/\D/g,'').length===11)&&!String(draft.whatsapp||'').replace(/\D/g,'').startsWith('55')?'55'+String(draft.whatsapp||'').replace(/\D/g,''):String(draft.whatsapp||'').replace(/\D/g,'')):null),p_table_session_token:staffSession.table_session_token||null,p_session_epoch:staffSession.session_epoch},false);staffSession.table_session_token=r.table_session_token;staffSession.session_epoch=r.session_epoch;draft={tableId:staffSession.table_id,qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:''};document.getElementById('app').innerHTML=`<div class="onboard"><div class="card" style="text-align:center"><div style="font-size:52px">✅</div><h1>Pedido enviado!</h1><p>Pedido <b>#${r.order_no}</b> recebido pela cozinha.</p><h2>${money(r.total)}</h2>${customerPaymentHtml(r.order_no,r.total,null)}<div style="display:grid;gap:10px;max-width:320px;margin:0 auto"><button class="btn btn-primary" onclick="renderQR('${token}')">Fazer outro pedido</button><button class="btn btn-soft" onclick="location.href='/'">Sair</button></div></div></div>`}catch(e){toast(e.message)}}
 function clearPoll(){if(poller){clearInterval(poller);poller=null}}
 init().catch(e=>{console.error(e);try{localStorage.removeItem('pc_auth');localStorage.removeItem('pc_staff')}catch(_){}document.getElementById('app').innerHTML='<div class="onboard"><div class="card"><h2>Não foi possível abrir o sistema</h2><p>'+esc(e?.message||'Erro ao carregar.')+'</p><button class="btn btn-primary" onclick="location.reload()">Tentar novamente</button></div></div>'});
 </script>
