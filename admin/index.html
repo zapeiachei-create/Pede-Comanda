@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4d0710">
+<title>Pede Comanda • Super Admin</title>
+<link rel="icon" href="/favicon.ico" sizes="any">
+<style>
+:root{--wine:#7b0f1b;--wine2:#a4162a;--wine3:#4d0710;--bg:#f7f3f1;--card:#fff;--text:#211d1d;--muted:#746b6b;--line:#eadfdb;--ok:#178456;--warn:#b66b00;--danger:#b42334;--info:#2f6fd5;--shadow:0 12px 34px rgba(72,10,20,.10)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}button,input,select{font:inherit}button{cursor:pointer}
+.hidden{display:none!important}.topbar{position:sticky;top:0;z-index:30;background:linear-gradient(135deg,var(--wine3),var(--wine));color:#fff;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 5px 20px rgba(50,0,10,.2)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}.brandmark{width:42px;height:42px;border:2px solid #fff;border-radius:13px;display:grid;place-items:center;font-weight:1000}.brandtxt strong{display:block;font-size:17px}.brandtxt small{opacity:.82}
+.wrap{max-width:1500px;margin:auto;padding:20px}.pagehead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}.pagehead h1{margin:0;font-size:30px}.muted{color:var(--muted)}.small{font-size:12px}
+.grid{display:grid;gap:12px}.stats{grid-template-columns:repeat(6,minmax(0,1fr));margin-bottom:15px}.card{background:#fff;border:1px solid var(--line);border-radius:17px;padding:15px;box-shadow:var(--shadow)}.stat span{font-size:12px;color:var(--muted);display:block}.stat b{display:block;font-size:25px;color:var(--wine);margin-top:5px}
+.btn{border:0;border-radius:11px;padding:9px 12px;font-weight:850}.btn-primary{background:var(--wine);color:#fff}.btn-soft{background:#f6e4e7;color:var(--wine)}.btn-white{background:#fff;color:var(--wine)}.btn-danger{background:#fff0f2;color:var(--danger)}.btn-ok{background:#e7f7ef;color:var(--ok)}.btn-sm{padding:7px 9px;font-size:12px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.filters{display:grid;grid-template-columns:1fr 220px auto;gap:9px;margin-bottom:13px}.filters input,.filters select,.loginbox input{border:1px solid #dfd1cd;border-radius:11px;padding:11px 12px;outline:0;background:#fff;width:100%}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:14px}.table{border-collapse:collapse;width:100%;min-width:1040px;background:#fff}.table th,.table td{padding:11px;border-bottom:1px solid var(--line);text-align:left;font-size:13px;vertical-align:top}.table th{font-size:10px;text-transform:uppercase;color:#776b68;background:#fbf8f7;position:sticky;top:0}.table tr:hover td{background:#fffafa}
+.badge{display:inline-flex;border-radius:999px;padding:5px 8px;font-size:11px;font-weight:900;white-space:nowrap}.b-trial{background:#fff2d8;color:#8c5800}.b-active{background:#e4f7ed;color:#117144}.b-expired,.b-cancelled{background:#ffe9ec;color:#a82637}.b-past_due{background:#fff0dc;color:#a25e00}.b-off{background:#eee9e8;color:#625b58}
+.store-name{font-weight:950;color:#3c292c}.contact a{color:var(--wine);font-weight:800;text-decoration:none}.actions{display:flex;gap:6px;flex-wrap:wrap;min-width:220px}.kpi{font-weight:900}
+.loginpage{min-height:100vh;display:grid;grid-template-columns:1.05fr .95fr;background:linear-gradient(135deg,#3d050c,#7b0f1b 55%,#a4162a)}.loginhero{padding:48px;color:#fff;display:flex;flex-direction:column;justify-content:center}.loginhero h1{font-size:48px;line-height:1;margin:0 0 14px}.loginhero p{font-size:21px;opacity:.92}.loginbox{background:#fff;border-radius:24px;padding:25px;width:min(500px,92%);margin:auto;box-shadow:0 28px 80px rgba(0,0,0,.28)}.field{display:grid;gap:6px;margin:11px 0}.field label{font-size:13px;font-weight:850}.error{background:#fff0f2;border:1px solid #efc1c8;color:#8f1020;padding:10px;border-radius:10px;margin:10px 0}.empty{text-align:center;padding:30px;color:var(--muted)}.toast{position:fixed;right:14px;bottom:14px;background:#231f20;color:#fff;padding:11px 14px;border-radius:11px;z-index:100;box-shadow:var(--shadow)}
+@media(max-width:1100px){.stats{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.loginpage{grid-template-columns:1fr}.loginhero{padding:32px 22px 8px}.loginhero h1{font-size:36px}.loginhero p{font-size:17px}.loginbox{margin:10px auto 28px}.wrap{padding:12px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.filters{grid-template-columns:1fr}.pagehead{flex-direction:column}.topbar{padding:9px 10px}.brandtxt small{display:none}.stat b{font-size:21px}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const SUPABASE_URL="https://aajpumelbbgutmeackuu.supabase.co";
+const SUPABASE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhanB1bWVsYmJndXRtZWFja3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0MzUwODQsImV4cCI6MjA3NTAxMTA4NH0.6SoJ0vQy5F33IOeVjMllxPv7SlST6dpaGJMlvPceLVk";
+const FN_URL=SUPABASE_URL+"/functions/v1/pc-superadmin";
+let session=readJSON("pc_auth");
+let state={data:null,search:"",filter:"all",loading:false};
+
+function readJSON(k){try{return JSON.parse(localStorage.getItem(k)||"null")}catch(_){return null}}
+function saveSession(s){session=s;localStorage.setItem("pc_auth",JSON.stringify(s))}
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function money(v){return Number(v||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})}
+function date(v){if(!v)return "—";return new Date(v).toLocaleDateString("pt-BR")}
+function dateTime(v){if(!v)return "Sem pedidos";return new Date(v).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})}
+function toast(msg){document.querySelector(".toast")?.remove();const d=document.createElement("div");d.className="toast";d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),3200)}
+
+async function authFetch(path,opt={}){
+  return fetch(SUPABASE_URL+path,{...opt,headers:{apikey:SUPABASE_KEY,"Content-Type":"application/json",...(opt.headers||{})}})
+}
+async function refreshSession(){
+  if(!session?.refresh_token)return false;
+  const r=await authFetch("/auth/v1/token?grant_type=refresh_token",{method:"POST",body:JSON.stringify({refresh_token:session.refresh_token})});
+  if(!r.ok)return false;
+  const s=await r.json();saveSession(s);return true;
+}
+async function callAdmin(action,payload={},retry=true){
+  if(!session?.access_token)throw new Error("LOGIN_REQUIRED");
+  let r=await fetch(FN_URL,{method:"POST",headers:{apikey:SUPABASE_KEY,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"},body:JSON.stringify({action,...payload})});
+  if(r.status===401&&retry&&await refreshSession())return callAdmin(action,payload,false);
+  const out=await r.json().catch(()=>({}));
+  if(!r.ok){const e=new Error(out.error||("HTTP_"+r.status));e.status=r.status;throw e}
+  return out;
+}
+
+function renderLogin(message=""){
+  document.getElementById("app").innerHTML=`<div class="loginpage"><section class="loginhero"><div><div class="brand" style="margin-bottom:26px"><div class="brandmark">PC</div><div class="brandtxt"><strong>Pede Comanda</strong><small>Área reservada</small></div></div><h1>Super Admin</h1><p>Acompanhe todas as lojas, testes e utilização da plataforma.</p></div></section><section class="loginbox"><h2 style="margin-top:0">Entrar como administrador geral</h2><p class="muted">Use sua conta principal do Pede Comanda.</p>${message?`<div class="error">${esc(message)}</div>`:""}<div class="field"><label>E-mail</label><input id="email" type="email" autocomplete="email" placeholder="seu@email.com"></div><div class="field"><label>Senha</label><input id="pass" type="password" autocomplete="current-password" placeholder="Sua senha" onkeydown="if(event.key==='Enter')login()"></div><button class="btn btn-primary" style="width:100%;padding:12px" onclick="login()">Entrar</button><p class="muted small" style="margin-bottom:0">Este endereço não aparece no painel dos lojistas.</p></section></div>`;
+}
+async function login(){
+  const email=document.getElementById("email")?.value.trim();const password=document.getElementById("pass")?.value||"";
+  if(!email||!password)return toast("Informe e-mail e senha.");
+  try{
+    const r=await authFetch("/auth/v1/token?grant_type=password",{method:"POST",body:JSON.stringify({email,password})});
+    const out=await r.json();if(!r.ok)throw new Error(out.error_description||out.msg||"Não foi possível entrar.");
+    saveSession(out);await loadDashboard();
+  }catch(e){renderLogin(e.message||"Falha no login.")}
+}
+async function logout(){try{if(session?.access_token)await authFetch("/auth/v1/logout",{method:"POST",headers:{Authorization:"Bearer "+session.access_token}})}catch(_){}localStorage.removeItem("pc_auth");session=null;renderLogin()}
+
+function statusLabel(s){return ({trial:"Teste grátis",active:"Ativa",expired:"Teste vencido",past_due:"Pagamento pendente",cancelled:"Cancelada"})[s]||s}
+function statusBadge(b){
+  if(b.active===false)return '<span class="badge b-off">Acesso pausado</span>';
+  return '<span class="badge b-'+esc(b.subscription_status)+'">'+esc(statusLabel(b.subscription_status))+'</span>';
+}
+function trialText(b){
+  if(b.subscription_status!=="trial")return b.paid_until?"Pago até "+date(b.paid_until):esc(b.plan_code||"—");
+  const n=b.trial_days_left;
+  if(n===null)return "Sem vencimento";
+  if(n<0)return "Venceu há "+Math.abs(n)+" dia(s)";
+  if(n===0)return "Vence hoje";
+  return n+" dia(s) restante(s)";
+}
+function waLink(v){const d=String(v||"").replace(/\D/g,"");return d?'<a href="https://wa.me/'+d+'" target="_blank" rel="noopener">'+esc(v)+'</a>':"—"}
+function storeRows(){
+  const stores=state.data?.stores||[];const q=state.search.toLowerCase();
+  return stores.filter(b=>{
+    const hay=[b.name,b.slug,b.contact_name,b.contact_email,b.contact_whatsapp].join(" ").toLowerCase();
+    const okQ=!q||hay.includes(q);
+    const okF=state.filter==="all"||(state.filter==="blocked"?b.active===false:(b.subscription_status===state.filter&&b.active!==false));
+    return okQ&&okF;
+  })
+}
+function render(){
+  const d=state.data;if(!d)return;
+  const s=d.stats;const rows=storeRows();
+  document.getElementById("app").innerHTML=`<header class="topbar"><div class="brand"><div class="brandmark">PC</div><div class="brandtxt"><strong>Pede Comanda • Super Admin</strong><small>${esc(d.admin?.name||"Administrador geral")}</small></div></div><div class="toolbar"><button class="btn btn-white btn-sm" onclick="loadDashboard()">Atualizar</button><button class="btn btn-white btn-sm" onclick="logout()">Sair</button></div></header><main class="wrap"><div class="pagehead"><div><h1>Evolução das lojas</h1><div class="muted">Visão geral de cadastros, testes, atividade e faturamento processado.</div></div><div class="muted small">Atualizado: ${dateTime(d.generated_at)}</div></div>
+  <section class="grid stats">
+    <div class="card stat"><span>Lojas cadastradas</span><b>${s.stores_total}</b></div>
+    <div class="card stat"><span>Novas hoje</span><b>${s.stores_today}</b></div>
+    <div class="card stat"><span>Em teste grátis</span><b>${s.trials}</b></div>
+    <div class="card stat"><span>Testes vencendo</span><b>${s.trials_expiring}</b></div>
+    <div class="card stat"><span>Lojas ativas</span><b>${s.active_paid}</b></div>
+    <div class="card stat"><span>Pedidos hoje</span><b>${s.orders_today}</b></div>
+  </section>
+  <section class="card"><div class="pagehead" style="margin-bottom:12px"><div><h2 style="margin:0">Lojas</h2><div class="muted small">${rows.length} exibida(s) • ${s.stores_last_7_days} cadastro(s) nos últimos 7 dias • Faturamento entregue: <b>${money(s.revenue_delivered)}</b></div></div></div>
+    <div class="filters"><input placeholder="Buscar loja, responsável, e-mail ou WhatsApp..." value="${esc(state.search)}" oninput="state.search=this.value;render()"><select onchange="state.filter=this.value;render()"><option value="all" ${state.filter==="all"?"selected":""}>Todas</option><option value="trial" ${state.filter==="trial"?"selected":""}>Teste grátis</option><option value="active" ${state.filter==="active"?"selected":""}>Ativas</option><option value="expired" ${state.filter==="expired"?"selected":""}>Vencidas</option><option value="past_due" ${state.filter==="past_due"?"selected":""}>Pagamento pendente</option><option value="cancelled" ${state.filter==="cancelled"?"selected":""}>Canceladas</option><option value="blocked" ${state.filter==="blocked"?"selected":""}>Acesso pausado</option></select><button class="btn btn-soft" onclick="state.search='';state.filter='all';render()">Limpar</button></div>
+    <div class="tablewrap"><table class="table"><thead><tr><th>Loja</th><th>Contato</th><th>Situação</th><th>Teste / plano</th><th>Uso</th><th>Ações</th></tr></thead><tbody>${rows.map(b=>`<tr><td><div class="store-name">${esc(b.name)}</div><div class="muted small">/${esc(b.slug)} • cadastrado em ${date(b.created_at)}</div><div class="muted small">${esc(b.service_mode||"")}</div></td><td class="contact"><b>${esc(b.contact_name||"—")}</b><div>${waLink(b.contact_whatsapp)}</div><div class="muted small">${esc(b.contact_email||"—")}</div></td><td>${statusBadge(b)}<div class="muted small" style="margin-top:6px">${b.active===false?"Loja sem acesso":"Acesso liberado"}</div></td><td><b>${esc(trialText(b))}</b><div class="muted small">Plano: ${esc(b.plan_code||"—")}</div><div class="muted small">Fim do teste: ${date(b.trial_ends_at)}</div></td><td><span class="kpi">${b.orders_count||0}</span> pedidos<div class="muted small">${b.products_count||0} produtos • ${b.staff_count||0} equipe</div><div class="muted small">Último: ${dateTime(b.last_order_at)}</div></td><td><div class="actions"><button class="btn btn-soft btn-sm" onclick="extendTrial('${b.id}',7)">+7 dias</button>${b.subscription_status!=="active"?`<button class="btn btn-ok btn-sm" onclick="setStatus('${b.id}','active')">Ativar</button>`:""}<button class="btn ${b.active===false?"btn-ok":"btn-danger"} btn-sm" onclick="setActive('${b.id}',${b.active===false})">${b.active===false?"Liberar":"Pausar"}</button><a class="btn btn-soft btn-sm" style="text-decoration:none" href="/sistema/?loja=${encodeURIComponent(b.slug)}" target="_blank">Abrir loja</a></div></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Nenhuma loja encontrada.</td></tr>'}</tbody></table></div>
+  </section></main>`;
+}
+async function loadDashboard(){
+  document.getElementById("app").innerHTML='<div class="loginpage"><section class="loginhero"><h1>Super Admin</h1><p>Carregando painel...</p></section><section class="loginbox"><div class="muted">Validando seu acesso de administrador geral.</div></section></div>';
+  try{const out=await callAdmin("dashboard");state.data=out;render()}catch(e){if(e.status===403)return renderLogin("Esta conta não possui acesso de Super Admin.");if(e.status===401||e.message==="LOGIN_REQUIRED")return renderLogin();renderLogin("Não foi possível carregar o painel.")}
+}
+async function action(name,payload,msg){
+  try{await callAdmin(name,payload);toast(msg);await loadDashboard()}catch(e){toast("Não foi possível concluir a alteração.")}
+}
+function extendTrial(id,days){if(confirm("Adicionar "+days+" dias ao período de teste desta loja?"))action("extend_trial",{business_id:id,days},"Teste prorrogado.")}
+function setActive(id,active){if(confirm(active?"Liberar novamente o acesso desta loja?":"Pausar o acesso desta loja?"))action("set_active",{business_id:id,active},active?"Acesso liberado.":"Acesso pausado.")}
+function setStatus(id,status){if(confirm("Ativar esta loja como cliente ativo?"))action("set_status",{business_id:id,status},"Loja ativada.")}
+
+if(session?.access_token)loadDashboard();else renderLogin();
+</script>
+</body>
+</html>
