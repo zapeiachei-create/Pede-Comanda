@@ -1,0 +1,41 @@
+name: Publish Pede Comanda tutorial videos
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish-tutorial:
+    if: contains(github.event.head_commit.message, '[publish-tutorial-v1]')
+    runs-on: ubuntu-latest
+    env:
+      TAG: tutorial-v1
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download tutorial videos
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tutorial-videos
+          curl -L --fail --retry 3 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/ee923119-716f-4721-bf7c-58209dac30b4.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiZTYzNDlkNDk4MTQ0YjI1NSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTM3MjYxN30.BOfQb6EqIFpKSzyYVPoQx6xl1lwTDLSqCyVVWqfRRfA' -o tutorial-videos/01-visao-geral.mp4
+          curl -L --fail --retry 3 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/2e6c8bf2-a7fc-46fa-9cb3-c512399ba17d.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYjk0ZTZkOTM4OGVlYzhlNiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTMyNDgxOX0.X-azP59y8yieVwXOVhTGOkDu3FThCS2f-QJccSz-gfc' -o tutorial-videos/02-configuracoes.mp4
+          curl -L --fail --retry 3 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/2c9242e8-710b-42be-9e96-9ec8418375a7.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMzU5YjQ3Nzg3N2VlNjYwNiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTM2MjQyNH0.gj0NAN2kJYOyShN4wNAOmn0aY83Q2i6--JUPr8Qi5-0' -o tutorial-videos/03-cardapio.mp4
+          curl -L --fail --retry 3 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/a7c085f9-e5ad-4824-b542-4637e5c78c97.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMzFmNzc1ZTBjOWZhYWZjYSIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTM3OTU1Mn0.NVcZ6JAH0D3Dm-yjIk6__GxrsJRw64OuXPqBYeUqIpY' -o tutorial-videos/04-equipe.mp4
+          curl -L --fail --retry 3 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/7359a26b-4b24-4d52-9ec6-ab9eb435e140.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMmUyMzA1YWRmMmFiMjg1OCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTMyMDc0OX0.lyj_iH3SvlU9F7T8-aGUWqekQFv-90sVOZMUpa6RoNc' -o tutorial-videos/05-qr-links-mesas.mp4
+          curl -L --fail --retry 3 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/b219ded0-7df8-485d-a76f-5e9d8edeefff.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiOTA5MmY0MWUzMDcwNzYwOCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTM3Mzg1NH0.cdPPAD5MeOVyE6vj7VHS3r5PkZ9loGbxGIuIegyIfvc' -o tutorial-videos/06-cozinha.mp4
+          curl -L --fail --retry 3 'https://d2jqrm6oza8nb6.cloudfront.net/datasets/81c97742-3a83-44cd-823e-3390a33f7d34.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMTY5Mzg0N2Y5ZmJkZjZmZCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTMyMDA2M30.C5lbaOMRLOydSWiJZ-jGaeE1mbbCcxT2tkXq-vSwLMI' -o tutorial-videos/07-pedido-pagamento-encerramento.mp4
+          ls -lh tutorial-videos
+
+      - name: Create or update tutorial release
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Pede Comanda — Tutoriais" --notes "Vídeos oficiais do passo a passo do Pede Comanda."
+          fi
+          gh release upload "$TAG" tutorial-videos/*.mp4 --clobber
