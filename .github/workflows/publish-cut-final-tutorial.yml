@@ -1,0 +1,49 @@
+name: Publish cut final tutorial video
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  publish-final:
+    if: contains(github.event.head_commit.message, '[publish-cut-tutorial-7]')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: tutorial-v1
+      REPO: zapeiachei-create/Pede-Comanda
+    steps:
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Cut final tutorial and publish release asset
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            'https://aajpumelbbgutmeackuu.supabase.co/storage/v1/object/public/pede-comanda-tutoriais/07-pedido-pagamento-encerramento.mp4' \
+            -o original.mp4
+
+          ffmpeg -hide_banner -loglevel error -y \
+            -i original.mp4 \
+            -t 95.8 \
+            -c:v libx264 -preset veryfast -crf 22 \
+            -c:a aac -b:a 128k \
+            -movflags +faststart \
+            07-pedido-pagamento-encerramento.mp4
+
+          if ! gh release view "$TAG" --repo "$REPO" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --repo "$REPO" \
+              --title "Pede Comanda — Tutoriais" \
+              --notes "Vídeos oficiais do passo a passo do Pede Comanda."
+          fi
+
+          gh release upload "$TAG" 07-pedido-pagamento-encerramento.mp4 \
+            --clobber \
+            --repo "$REPO"
