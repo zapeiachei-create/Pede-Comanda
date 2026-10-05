@@ -1,0 +1,38 @@
+name: Cut final tutorial video
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  cut-final:
+    if: contains(github.event.head_commit.message, '[cut-tutorial-7]')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG: tutorial-v1
+    steps:
+      - name: Install ffmpeg
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg
+
+      - name: Download, cut and replace final tutorial
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/07-pedido-pagamento-encerramento.mp4' \
+            -o original.mp4
+          ffmpeg -hide_banner -loglevel error -y \
+            -i original.mp4 \
+            -t 95.8 \
+            -c:v libx264 -preset veryfast -crf 22 \
+            -c:a aac -b:a 128k \
+            -movflags +faststart \
+            07-pedido-pagamento-encerramento.mp4
+          gh release upload "$TAG" 07-pedido-pagamento-encerramento.mp4 --clobber \
+            --repo zapeiachei-create/Pede-Comanda
