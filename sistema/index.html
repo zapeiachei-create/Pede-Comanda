@@ -115,13 +115,13 @@ const PUBLIC_CLIENT_BASE='https://pedecomanda.com.br/sistema/';
 const SUPPORT_WHATSAPP='5521972043295';
 const HELP_VIDEO_URL='';
 const TUTORIAL_VIDEOS=[
-  {n:1,title:'Conhecendo o painel',desc:'Visão geral do Pede Comanda e dos principais recursos.',duration:'1:20',icon:'▦',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/01-visao-geral.mp4'},
-  {n:2,title:'Configurando seu estabelecimento',desc:'Nome, logo, atendimento, WhatsApp, visual da comanda e Pix.',duration:'4:46',icon:'⚙',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/02-configuracoes.mp4'},
-  {n:3,title:'Cardápio, produtos e adicionais',desc:'Categorias, itens, opções, massas e adicionais grátis ou pagos.',duration:'3:57',icon:'☰',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/03-cardapio.mp4'},
-  {n:4,title:'Cadastro da equipe e acessos',desc:'Cadastre garçom, cozinha, caixa e gerente e configure os acessos.',duration:'2:09',icon:'👤',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/04-equipe.mp4'},
-  {n:5,title:'QR Codes, links e mesas',desc:'Gere QR por mesa, link de balcão/retirada e QR geral do estabelecimento.',duration:'2:21',icon:'▦',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/05-qr-links-mesas.mp4'},
-  {n:6,title:'Acompanhando pedidos na cozinha',desc:'Acompanhe os pedidos em Novos, Em preparo, Prontos e Entregues.',duration:'1:44',icon:'👨‍🍳',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/06-cozinha.mp4'},
-  {n:7,title:'Pedido, pagamento e encerramento',desc:'Veja o fluxo final do cliente, pagamento por Pix e conclusão do atendimento.',duration:'2:02',icon:'✓',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/07-pedido-pagamento-encerramento.mp4'}
+  {n:1,title:'Conhecendo o painel',desc:'Visão geral do Pede Comanda e dos principais recursos.',duration:'1:20',icon:'▦',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/01-visao-geral.mp4',fallback:'https://aajpumelbbgutmeackuu.supabase.co/storage/v1/object/public/pede-comanda-tutoriais/01-visao-geral.mp4'},
+  {n:2,title:'Configurando seu estabelecimento',desc:'Nome, logo, atendimento, WhatsApp, visual da comanda e Pix.',duration:'4:46',icon:'⚙',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/02-configuracoes.mp4',fallback:'https://d2jqrm6oza8nb6.cloudfront.net/datasets/2e6c8bf2-a7fc-46fa-9cb3-c512399ba17d.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiYjk0ZTZkOTM4OGVlYzhlNiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTMyNDgxOX0.X-azP59y8yieVwXOVhTGOkDu3FThCS2f-QJccSz-gfc'},
+  {n:3,title:'Cardápio, produtos e adicionais',desc:'Categorias, itens, opções, massas e adicionais grátis ou pagos.',duration:'3:57',icon:'☰',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/03-cardapio.mp4',fallback:'https://d2jqrm6oza8nb6.cloudfront.net/datasets/2c9242e8-710b-42be-9e96-9ec8418375a7.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMzU5YjQ3Nzg3N2VlNjYwNiIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTM2MjQyNH0.gj0NAN2kJYOyShN4wNAOmn0aY83Q2i6--JUPr8Qi5-0'},
+  {n:4,title:'Cadastro da equipe e acessos',desc:'Cadastre garçom, cozinha, caixa e gerente e configure os acessos.',duration:'2:09',icon:'👤',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/04-equipe.mp4',fallback:'https://aajpumelbbgutmeackuu.supabase.co/storage/v1/object/public/pede-comanda-tutoriais/04-equipe.mp4'},
+  {n:5,title:'QR Codes, links e mesas',desc:'Gere QR por mesa, link de balcão/retirada e QR geral do estabelecimento.',duration:'2:21',icon:'▦',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/05-qr-links-mesas.mp4',fallback:'https://d2jqrm6oza8nb6.cloudfront.net/datasets/7359a26b-4b24-4d52-9ec6-ab9eb435e140.mp4?_jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXlIYXNoIjoiMmUyMzA1YWRmMmFiMjg1OCIsImJ1Y2tldCI6InJ1bndheS1kYXRhc2V0cyIsInN0YWdlIjoicHJvZCIsImV4cCI6MTc5MTMyMDc0OX0.lyj_iH3SvlU9F7T8-aGUWqekQFv-90sVOZMUpa6RoNc'},
+  {n:6,title:'Acompanhando pedidos na cozinha',desc:'Acompanhe os pedidos em Novos, Em preparo, Prontos e Entregues.',duration:'1:44',icon:'👨‍🍳',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/06-cozinha.mp4',fallback:'https://aajpumelbbgutmeackuu.supabase.co/storage/v1/object/public/pede-comanda-tutoriais/06-cozinha.mp4'},
+  {n:7,title:'Pedido, pagamento e encerramento',desc:'Veja o fluxo final do cliente, pagamento por Pix e conclusão do atendimento.',duration:'2:02',icon:'✓',url:'https://github.com/zapeiachei-create/Pede-Comanda/releases/download/tutorial-v1/07-pedido-pagamento-encerramento.mp4',fallback:'https://aajpumelbbgutmeackuu.supabase.co/storage/v1/object/public/pede-comanda-tutoriais/07-pedido-pagamento-encerramento.mp4'}
 ];
 const COMANDA_TEMPLATES={
   'classic-clean':{group:'style',label:'Clássico Clean',desc:'Claro e elegante',primary:'#7b0f1b',secondary:'#a4162a',bg:'#f7f3f1',card:'#ffffff',text:'#211d1d'},
@@ -396,9 +396,17 @@ function openTutorialVideo(index){
   const d=document.createElement('div');
   d.id='pcTutorialVideo';
   d.className='help-backdrop tutorial-video-modal';
-  d.innerHTML=`<div class="help-modal" role="dialog" aria-modal="true"><div class="help-head"><div><h2>Aula ${v.n} • ${esc(v.title)}</h2><div>${esc(v.duration)} • Tutorial Pede Comanda</div></div><button class="help-close" onclick="closeTutorialVideo()" aria-label="Fechar">×</button></div><div class="tutorial-player-wrap"><video class="tutorial-player" controls playsinline preload="metadata" src="${esc(v.url)}"></video></div><div class="tutorial-video-copy"><h3>${esc(v.title)}</h3><div class="muted small">${esc(v.desc)}</div></div></div>`;
+  d.innerHTML=`<div class="help-modal" role="dialog" aria-modal="true"><div class="help-head"><div><h2>Aula ${v.n} • ${esc(v.title)}</h2><div>${esc(v.duration)} • Tutorial Pede Comanda</div></div><button class="help-close" onclick="closeTutorialVideo()" aria-label="Fechar">×</button></div><div class="tutorial-player-wrap"><video class="tutorial-player" controls playsinline preload="metadata" src="${esc(v.url)}" data-fallback="${esc(v.fallback||'')}" onerror="onTutorialVideoError(this)"></video></div><div class="tutorial-video-copy"><h3>${esc(v.title)}</h3><div class="muted small">${esc(v.desc)}</div></div></div>`;
   d.addEventListener('click',e=>{if(e.target===d)closeTutorialVideo()});
   document.body.appendChild(d);
+}
+function onTutorialVideoError(video){
+  if(!video||video.dataset.fallbackUsed==='1')return;
+  const fallback=video.dataset.fallback;
+  if(!fallback)return;
+  video.dataset.fallbackUsed='1';
+  video.src=fallback;
+  video.load();
 }
 function closeTutorialVideo(){
   const d=document.getElementById('pcTutorialVideo');
