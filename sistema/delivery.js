@@ -2,10 +2,10 @@
   var DELIVERY_VERSION='20261006-1';
 
   function deliveryLink(){
-    return 'https://pedecomanda.com.br/degusta/'+encodeURIComponent(business.slug)+'?delivery=1';
+    return 'https://pedecomanda.com.br/sistema/?loja='+encodeURIComponent(business.slug)+'&delivery=1';
   }
   function deliveryPrettyLink(){
-    return 'pedecomanda.com.br/degusta/'+business.slug+'?delivery=1';
+    return 'pedecomanda.com.br/sistema/?loja='+business.slug+'&delivery=1';
   }
   function deliveryFee(){
     return Math.max(0,Number((staffSession&&staffSession.delivery_fee)||(business&&business.delivery_fee)||0));
