@@ -1,5 +1,5 @@
 (function(){
-  var DELIVERY_VERSION='20261007-1';
+  var DELIVERY_VERSION='20261007-2';
 
   function deliveryLink(){
     return 'https://pedecomanda.com.br/sistema/?loja='+encodeURIComponent(business.slug)+'&delivery=1';
@@ -574,6 +574,83 @@
       '<button class="btn btn-soft btn-block btn-sm" style="margin-top:7px" onclick="openCustomerReceipt(\''+orderNo+'\','+Number(total)+','+(pickupNo?Number(pickupNo):'null')+')">Já paguei / enviar comprovante</button>'+
       '<div style="margin-top:12px;padding:10px;border-radius:10px;background:#f7f3f1"><b>💳 Cartão ou dinheiro</b><div class="small muted" style="margin-top:3px">'+esc(otherText)+'</div></div>'+
       '</div></div></div>';
+  };
+
+
+  // A comanda pública de balcão e o checkout Delivery usam o mesmo cardápio,
+  // mas antes não havia um botão para trocar de modalidade.
+  function publicOrderModePicker(mode){
+    var isDelivery=mode==='delivery';
+    return '<section data-pc-order-mode="true" style="padding:12px 15px;background:#fff7f7;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">'+
+      '<b style="display:block;margin-bottom:8px">Como deseja receber seu pedido?</b>'+
+      '<div class="toolbar" style="gap:8px;flex-wrap:wrap">'+
+      '<button class="btn '+(isDelivery?'btn-secondary':'btn-primary')+' btn-sm" type="button" onclick="choosePublicService(\'counter\')">🛍️ Retirar no balcão</button>'+
+      '<button class="btn '+(isDelivery?'btn-primary':'btn-secondary')+' btn-sm" type="button" onclick="choosePublicService(\'delivery\')">🛵 Receber em casa • Delivery</button>'+
+      '</div></section>';
+  }
+  function injectPublicOrderMode(mode){
+    var head=document.querySelector('#app .customer-comanda .comanda-head');
+    if(head&&!document.querySelector('#app [data-pc-order-mode]')){
+      head.insertAdjacentHTML('afterend',publicOrderModePicker(mode));
+    }
+  }
+  var originalCustomerCounterRender=renderCounter;
+  renderCounter=function(slug){
+    originalCustomerCounterRender(slug);
+    injectPublicOrderMode('counter');
+  };
+  var originalCustomerDeliveryRender=window.renderDelivery;
+  window.renderDelivery=function(slug){
+    originalCustomerDeliveryRender(slug);
+    injectPublicOrderMode('delivery');
+  };
+  window.choosePublicService=async function(mode){
+    if(mode!=='counter'&&mode!=='delivery')return;
+    if(mode===appMode)return;
+    var slug=currentPublicSlug||new URL(location.href).searchParams.get('loja');
+    if(!slug)return toast('Não foi possível identificar a loja.');
+    var previousDraft;
+    try{previousDraft=JSON.parse(JSON.stringify(draft||{}));}catch(e){previousDraft={};}
+    var u=new URL(location.href);
+    u.searchParams.set('loja',slug);
+    u.searchParams.delete('qr');
+    if(mode==='delivery')u.searchParams.set('delivery','1');
+    else u.searchParams.delete('delivery');
+    history.replaceState(null,'',u.pathname+u.search+u.hash);
+    try{
+      if(mode==='delivery')await window.loadDelivery(slug);
+      else await loadCounter(slug);
+      if(appMode!==mode||!staffSession||staffSession.business_slug!==slug)return;
+      var productIds=new Set((staffSession.categories||[]).flatMap(function(cat){return (cat.products||[]).map(function(p){return p.id;});}));
+      draft.qty=Object.fromEntries(Object.entries(previousDraft.qty||{}).filter(function(pair){return productIds.has(pair[0]);}));
+      draft.lines=(previousDraft.lines||[]).filter(function(line){return productIds.has(line.product_id);});
+      draft.customer=previousDraft.customer||'';
+      draft.whatsapp=previousDraft.whatsapp||'';
+      draft.notes=previousDraft.notes||'';
+      draft.config={};
+      if(mode==='delivery')window.renderDelivery(slug);else renderCounter(slug);
+    }catch(e){toast(e.message||'Não foi possível trocar o modo do pedido.');}
+  };
+
+  // Um atalho também é exibido na comanda aberta pela equipe.
+  var originalStaffComandaDelivery=staffComandaView;
+  staffComandaView=function(){
+    var html=originalStaffComandaDelivery();
+    if(staffSession&&staffSession.delivery_enabled!==false&&staffSession.business_slug){
+      var action='<div class="card" style="margin:10px 0;padding:12px;box-shadow:none;background:#fff7f7">'+
+        '<b>Modalidades de atendimento</b>'+
+        '<div class="muted small" style="margin:3px 0 9px">Mesa e balcão continuam aqui. Para enviar em domicílio, abra a comanda Delivery com bairros e taxas.</div>'+
+        '<button type="button" class="btn btn-primary btn-sm" onclick="openStaffDeliveryComanda()">🛵 Abrir comanda Delivery</button></div>';
+      html=html.replace('<div class="triplet">',action+'<div class="triplet">');
+    }
+    return html;
+  };
+  window.openStaffDeliveryComanda=function(){
+    var slug=staffSession&&staffSession.business_slug;
+    if(!slug)return toast('Loja não identificada.');
+    var url='/sistema/?loja='+encodeURIComponent(slug)+'&delivery=1';
+    var tab=window.open(url,'_blank');
+    if(!tab)toast('Libere novas abas para abrir a comanda Delivery.');
   };
 
   console.info('Pede Comanda Delivery '+DELIVERY_VERSION+' carregado');
