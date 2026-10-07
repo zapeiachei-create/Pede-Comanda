@@ -7,7 +7,21 @@
   function deliveryPrettyLink(){
     return 'pedecomanda.com.br/sistema/?loja='+business.slug+'&delivery=1';
   }
+  function deliveryNeighborhoods(){
+    return staffSession&&Array.isArray(staffSession.delivery_neighborhoods)?staffSession.delivery_neighborhoods:[];
+  }
+  function selectedDeliveryNeighborhood(){
+    return deliveryNeighborhoods().find(function(n){return n.id===(draft&&draft.neighborhoodId);})||null;
+  }
+  function deliveryNeedsNeighborhood(){return !!(staffSession&&staffSession.delivery_neighborhoods_configured);}
   function deliveryFee(){
+    if(appMode==='delivery'&&staffSession){
+      if(deliveryNeedsNeighborhood()){
+        var zone=selectedDeliveryNeighborhood();
+        return zone?Math.max(0,Number(zone.fee)||0):0;
+      }
+      return Math.max(0,Number(staffSession.delivery_fee)||0);
+    }
     return Math.max(0,Number((staffSession&&staffSession.delivery_fee)||(business&&business.delivery_fee)||0));
   }
   function deliveryTotal(){
@@ -455,7 +469,7 @@
     try{
       var boot=await rpc('pc_delivery_bootstrap',{p_business_slug:currentPublicSlug},false);
       staffSession=boot;applyComandaAppearance(boot);
-      draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:''};
+      draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
       window.renderDelivery(currentPublicSlug);
     }catch(e){
       document.getElementById('app').innerHTML='<div class="onboard"><div class="card"><h2>Delivery indisponível</h2><p>'+esc(e.message)+'</p><button class="btn btn-primary" onclick="location.href=\'/\'">Voltar ao Pede Comanda</button></div></div>';
@@ -476,10 +490,19 @@
     draft.qty[id]=Math.max(0,(draft.qty[id]||0)+d);
     window.renderDelivery(currentPublicSlug);
   };
+  window.deliverySelectNeighborhood=function(id){draft.neighborhoodId=id;window.renderDelivery(currentPublicSlug);};
   window.renderDelivery=function(slug){
     applyComandaAppearance(staffSession);
     var cats=staffSession.categories||[];
     var fee=deliveryFee();
+    var zones=deliveryNeighborhoods();
+    var configured=deliveryNeedsNeighborhood();
+    var selected=selectedDeliveryNeighborhood();
+    var neighborhoodField=configured?'<div class="field"><label>Bairro de entrega *</label>'+
+      (zones.length?'<select onchange="deliverySelectNeighborhood(this.value)"><option value="">Selecione seu bairro</option>'+
+        zones.map(function(n){return '<option value="'+esc(n.id)+'" '+(selected&&selected.id===n.id?'selected':'')+'>'+esc(n.name)+' — '+money(n.fee)+'</option>';}).join('')+
+        '</select><div class="muted small">Só entregamos nos bairros desta lista.</div>'
+        :'<div class="danger-note">A loja ainda não tem bairros ativos para entrega.</div>')+'</div>':'';
     document.getElementById('app').innerHTML='<header class="topbar"><div class="brand">'+
       (staffSession.logo_url?'<img class="logo-mini" src="'+esc(staffSession.logo_url)+'">':'<div class="brandmark">PC</div>')+
       '<div class="brandtxt"><strong>'+esc(staffSession.business_name)+'</strong><small>Pede Comanda • Delivery</small></div></div></header>'+
@@ -489,13 +512,14 @@
       draftCart('delivery')+
       '<div class="field"><label>Seu nome *</label><input value="'+esc(draft.customer||'')+'" oninput="draft.customer=this.value" placeholder="Ex.: João"></div>'+
       '<div class="field"><label>WhatsApp *</label><input inputmode="tel" value="'+esc(draft.whatsapp||'')+'" oninput="draft.whatsapp=this.value" placeholder="(21) 99999-9999"><div class="muted small">Usaremos este número caso a loja ou o entregador precise falar com você.</div></div>'+
-      '<div class="field"><label>Endereço completo *</label><textarea rows="2" oninput="draft.address=this.value" placeholder="Rua, número, bairro, cidade">'+esc(draft.address||'')+'</textarea></div>'+
+      neighborhoodField+
+      '<div class="field"><label>Endereço completo *</label><textarea rows="2" oninput="draft.address=this.value" placeholder="Rua, número, complemento e cidade">'+esc(draft.address||'')+'</textarea></div>'+
       '<div class="field"><label>Ponto de referência (opcional)</label><input value="'+esc(draft.reference||'')+'" oninput="draft.reference=this.value" placeholder="Ex.: portão azul, próximo à praça"></div>'+
       '<div class="field"><label>Observações do pedido</label><textarea rows="3" oninput="draft.notes=this.value" placeholder="Ex.: sem cebola...">'+esc(draft.notes||'')+'</textarea></div>'+
       '<div class="card" style="box-shadow:none;background:#faf7f6;margin-top:10px"><div class="inline" style="justify-content:space-between"><span>Itens</span><b>'+money(draftTotal())+'</b></div>'+
-      '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b>'+money(fee)+'</b></div></div>'+
-      '<div class="summary"><div><span class="muted">Total com entrega</span><strong>'+money(deliveryTotal())+'</strong></div></div>'+
-      '<button class="send" onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div></main>';
+      '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b>'+(configured&&!selected?'Escolha o bairro':money(fee))+'</b></div></div>'+
+      '<div class="summary"><div><span class="muted">Total com entrega</span><strong>'+(configured&&!selected?'A calcular':money(deliveryTotal()))+'</strong></div></div>'+
+      '<button class="send" '+(configured&&!selected?'disabled title="Selecione um bairro"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div></main>';
   };
   window.submitDeliveryOrder=async function(slug){
     var items=Object.entries(draft.qty).filter(function(x){return x[1]>0;}).map(function(x){
@@ -518,7 +542,7 @@
         p_delivery_address:draft.address||null,
         p_delivery_reference:draft.reference||null
       },false);
-      draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:''};
+      draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
       document.getElementById('app').innerHTML='<div class="onboard"><div class="card" style="text-align:center"><div style="font-size:52px">🛵</div><h1>Pedido enviado!</h1>'+
         '<p>Pedido <b>#'+r.order_no+'</b> recebido pela cozinha.</p><h2>'+money(r.total)+'</h2>'+
         '<p class="muted">Taxa de entrega: '+money(r.delivery_fee||0)+'. Acompanhe pelo WhatsApp informado caso a loja precise falar com você.</p>'+
