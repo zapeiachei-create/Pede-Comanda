@@ -1060,7 +1060,7 @@ function clearPoll(){if(poller){clearInterval(poller);poller=null}}
 (function bootPedeComanda(){
   const start=()=>init().catch(e=>{console.error(e);try{localStorage.removeItem('pc_auth');localStorage.removeItem('pc_staff')}catch(_){}document.getElementById('app').innerHTML='<div class="onboard"><div class="card"><h2>Não foi possível abrir o sistema</h2><p>'+esc(e?.message||'Erro ao carregar.')+'</p><button class="btn btn-primary" onclick="location.reload()">Tentar novamente</button></div></div>'});
   const s=document.createElement('script');
-  s.src='/sistema/delivery.js?v=20261007-2';
+  s.src='/sistema/delivery.js?v=20261007-3';
   s.onload=start;
   s.onerror=()=>{console.warn('Delivery patch não carregou');start()};
   document.head.appendChild(s);
