@@ -1,5 +1,5 @@
 (function(){
-  var DELIVERY_VERSION='20261006-1';
+  var DELIVERY_VERSION='20261006-2';
 
   function deliveryLink(){
     return 'https://pedecomanda.com.br/sistema/?loja='+encodeURIComponent(business.slug)+'&delivery=1';
@@ -60,26 +60,61 @@
 
   var oldStaffAdminView=staffAdminView;
   staffAdminView=function(){
+    var form='<div class="card" id="pcStaffNewCard" style="margin-bottom:14px">'+
+      '<h3 style="margin-top:0">Cadastrar funcionário ou entregador</h3>'+
+      '<p class="muted small">Selecione a função na lista. Para entregadores, escolha <b>Entregador</b>; não precisa digitar nenhum código.</p>'+
+      '<form id="pcStaffNewForm" onsubmit="event.preventDefault();saveNewStaff()">'+
+      '<div class="grid grid-2">'+
+      '<div class="field"><label for="pcStaffName">Nome</label><input id="pcStaffName" type="text" autocomplete="off" maxlength="100" placeholder="Nome do funcionário" required></div>'+
+      '<div class="field"><label for="pcStaffRole">Função</label><select id="pcStaffRole" required>'+
+      '<option value="delivery">🛵 Entregador</option>'+
+      '<option value="waiter">Garçom / Atendente</option>'+
+      '<option value="kitchen">Cozinha</option>'+
+      '<option value="cashier">Caixa</option>'+
+      '<option value="manager">Gerente</option>'+
+      '</select></div>'+
+      '<div class="field"><label for="pcStaffPin">PIN individual (4 a 6 números)</label><input id="pcStaffPin" type="password" inputmode="numeric" autocomplete="new-password" pattern="[0-9]{4,6}" minlength="4" maxlength="6" placeholder="Crie o PIN" required></div>'+
+      '</div>'+
+      '<div id="pcStaffNewFeedback" class="small" style="margin:8px 0" role="status" aria-live="polite"></div>'+
+      '<button id="pcStaffSaveButton" class="btn btn-primary" type="submit">Salvar cadastro</button>'+
+      '</form></div>';
     return oldStaffAdminView()
       .replace('garçom, cozinha, caixa e gerente','garçom, cozinha, caixa, gerente e entregador')
-      .replace('+ Cadastrar garçom / equipe','+ Cadastrar equipe / entregador');
+      .replace('+ Cadastrar garçom / equipe','+ Cadastrar equipe / entregador')
+      .replace('<div class="card">',form+'<div class="card">');
   };
   roleLabel=function(r){
     return ({waiter:'Garçom / Atendente',kitchen:'Cozinha',cashier:'Caixa',manager:'Gerente',delivery:'Entregador'})[r]||r;
   };
-  newStaff=async function(){
-    var name=prompt('Nome do funcionário / entregador');
-    if(!name)return;
-    var role=prompt('Função: waiter = garçom | kitchen = cozinha | cashier = caixa | manager = gerente | delivery = entregador','waiter')||'waiter';
-    role=String(role).trim().toLowerCase();
-    if(!['waiter','kitchen','cashier','manager','delivery'].includes(role))return toast('Função inválida.');
-    var pin=prompt('PIN de 4 a 6 números');
-    if(!pin)return;
+  newStaff=function(){
+    var input=document.getElementById('pcStaffName');
+    if(input){input.scrollIntoView({behavior:'smooth',block:'center'});input.focus();}
+    else go('staff');
+  };
+  window.saveNewStaff=async function(){
+    var nameInput=document.getElementById('pcStaffName');
+    var roleInput=document.getElementById('pcStaffRole');
+    var pinInput=document.getElementById('pcStaffPin');
+    var feedback=document.getElementById('pcStaffNewFeedback');
+    var button=document.getElementById('pcStaffSaveButton');
+    if(!nameInput||!roleInput||!pinInput||!button)return;
+    var name=nameInput.value.trim();
+    var role=roleInput.value;
+    var pin=pinInput.value.trim();
+    function report(message,isError){if(feedback){feedback.textContent=message;feedback.style.color=isError?'#b42334':'#1f9d66';}}
+    if(!name)return report('Informe o nome do funcionário.',true);
+    if(!['waiter','kitchen','cashier','manager','delivery'].includes(role))return report('Selecione uma função válida.',true);
+    if(!/^[0-9]{4,6}$/.test(pin))return report('O PIN precisa ter de 4 a 6 números.',true);
+    button.disabled=true;button.textContent='Salvando cadastro...';report('Salvando...',false);
     try{
-      await rpc('pc_create_staff',{p_business_id:business.id,p_name:name,p_pin:pin,p_role:role});
-      await reloadAdminData();renderAdmin();
-      toast(role==='delivery'?'Entregador cadastrado.':'Funcionário cadastrado.');
-    }catch(e){toast(e.message);}
+      var id=await rpc('pc_create_staff',{p_business_id:business.id,p_name:name,p_pin:pin,p_role:role});
+      await reloadAdminData();
+      var confirmed=data.staff.some(function(s){return s.id===id&&s.role===role;});
+      if(!confirmed)throw new Error('Não foi possível confirmar o cadastro na lista. Confira a conexão e tente atualizar a página.');
+      toast(role==='delivery'?'Entregador cadastrado e confirmado.':'Funcionário cadastrado e confirmado.');
+      renderAdmin();
+    }catch(e){report('Não foi possível salvar: '+(e&&e.message?e.message:'tente novamente.'),true);}
+    finally{if(button.isConnected){button.disabled=false;button.textContent='Salvar cadastro';}}
   };
 
   var oldTablesAdminView=tablesAdminView;
