@@ -1,5 +1,5 @@
 (function(){
-  var DELIVERY_VERSION='20261007-2';
+  var DELIVERY_VERSION='20261007-3';
 
   function deliveryLink(){
     return 'https://pedecomanda.com.br/sistema/?loja='+encodeURIComponent(business.slug)+'&delivery=1';
@@ -632,25 +632,110 @@
     }catch(e){toast(e.message||'Não foi possível trocar o modo do pedido.');}
   };
 
-  // Um atalho também é exibido na comanda aberta pela equipe.
+  // O atendente também pode escolher Delivery na própria comanda,
+  // além das opções de mesa e balcão.
+  function staffSelectedDeliveryNeighborhood(){
+    return (staffSession.delivery_neighborhoods||[]).find(function(n){return n.id===draft.neighborhoodId;})||null;
+  }
+  function staffDeliveryFee(){
+    if(staffSession.delivery_neighborhoods_configured){
+      var zone=staffSelectedDeliveryNeighborhood();
+      return zone?Number(zone.fee||0):0;
+    }
+    return Number(staffSession.delivery_fee||0);
+  }
+  window.staffChangeService=async function(selected){
+    if(selected!=='__delivery__'){
+      draft.tableId=selected;
+      renderStaff();
+      return;
+    }
+    var slug=staffSession&&staffSession.business_slug;
+    if(!slug)return toast('Loja não identificada.');
+    try{
+      var settings=await rpc('pc_delivery_bootstrap',{p_business_slug:slug},false);
+      staffSession.delivery_neighborhoods=settings.delivery_neighborhoods||[];
+      staffSession.delivery_neighborhoods_configured=!!settings.delivery_neighborhoods_configured;
+      staffSession.delivery_fee=settings.delivery_fee;
+      draft.tableId='__delivery__';
+      draft.neighborhoodId='';
+      renderStaff();
+    }catch(e){
+      toast(e.message||'Não foi possível carregar as opções de Delivery.');
+      renderStaff();
+    }
+  };
+  window.staffSelectNeighborhood=function(zoneId){
+    draft.neighborhoodId=zoneId;
+    renderStaff();
+  };
   var originalStaffComandaDelivery=staffComandaView;
   staffComandaView=function(){
     var html=originalStaffComandaDelivery();
-    if(staffSession&&staffSession.delivery_enabled!==false&&staffSession.business_slug){
-      var action='<div class="card" style="margin:10px 0;padding:12px;box-shadow:none;background:#fff7f7">'+
-        '<b>Modalidades de atendimento</b>'+
-        '<div class="muted small" style="margin:3px 0 9px">Mesa e balcão continuam aqui. Para enviar em domicílio, abra a comanda Delivery com bairros e taxas.</div>'+
-        '<button type="button" class="btn btn-primary btn-sm" onclick="openStaffDeliveryComanda()">🛵 Abrir comanda Delivery</button></div>';
-      html=html.replace('<div class="triplet">',action+'<div class="triplet">');
-    }
+    if(!staffSession||staffSession.delivery_enabled===false||!staffSession.business_slug)return html;
+    html=html.replace('onchange="draft.tableId=this.value"','onchange="staffChangeService(this.value)"');
+    html=html.replace(/(<select id="staffTable"[^>]*>)([\s\S]*?)(<\/select>)/,function(_,opening,options,closing){
+      return opening+options+'<option value="__delivery__" '+(draft.tableId==='__delivery__'?'selected':'')+'>🛵 Delivery • Entrega em casa</option>'+closing;
+    });
+    html=html.replace('Mesa / Retirada</span>','Mesa / Retirada / Delivery</span>');
+    if(draft.tableId!=='__delivery__')return html;
+
+    var configured=!!staffSession.delivery_neighborhoods_configured;
+    var zones=staffSession.delivery_neighborhoods||[];
+    var selected=staffSelectedDeliveryNeighborhood();
+    var value=staffDeliveryFee();
+    var zoneField=configured?'<div class="field"><label>Bairro da entrega *</label>'+
+      (zones.length?'<select onchange="staffSelectNeighborhood(this.value)">'+
+        '<option value="">Selecione o bairro</option>'+
+        zones.map(function(z){return '<option value="'+esc(z.id)+'" '+(selected&&selected.id===z.id?'selected':'')+'>'+esc(z.name)+' — '+money(z.fee)+'</option>';}).join('')+
+        '</select><div class="muted small">O frete é calculado conforme o bairro cadastrado pela loja.</div>'
+        :'<div class="danger-note">Nenhum bairro ativo. Ative um bairro em Configurações → Delivery.</div>')+
+      '</div>':'';
+    var deliveryFields=
+      '<div class="field"><label>WhatsApp do cliente *</label><input type="tel" inputmode="tel" value="'+esc(draft.whatsapp||'')+'" oninput="draft.whatsapp=this.value" placeholder="(21) 99999-9999"></div>'+
+      zoneField+
+      '<div class="field"><label>Endereço completo *</label><textarea rows="2" oninput="draft.address=this.value" placeholder="Rua, número, complemento e cidade">'+esc(draft.address||'')+'</textarea></div>'+
+      '<div class="field"><label>Referência da entrega</label><input value="'+esc(draft.reference||'')+'" oninput="draft.reference=this.value" placeholder="Portão azul, próximo à praça"></div>'+
+      '<div class="muted small" style="margin-bottom:10px">Taxa de entrega: <b>'+(configured&&!selected?'Selecione o bairro':money(value))+'</b></div>';
+    html=html.replace('Nome do cliente (opcional)</label>','Nome do cliente *</label>');
+    html=html.replace('<div class="field"><label>Observações do pedido</label>',deliveryFields+'<div class="field"><label>Observações do pedido</label>');
+    html=html.replace('<span class="muted">Total</span><strong>'+money(draftTotal())+'</strong>',
+      '<span class="muted">Total com entrega</span><strong>'+(configured&&!selected?'A calcular':money(draftTotal()+value))+'</strong>');
+    html=html.replace('>Enviar para Cozinha</button>','>Enviar pedido Delivery</button>');
+    html=html.replace(/<button class="btn btn-danger btn-block"[^>]*onclick="staffCloseCurrentTable\(\)"[^>]*>[\s\S]*?<\/button>/,'');
     return html;
   };
-  window.openStaffDeliveryComanda=function(){
-    var slug=staffSession&&staffSession.business_slug;
-    if(!slug)return toast('Loja não identificada.');
-    var url='/sistema/?loja='+encodeURIComponent(slug)+'&delivery=1';
-    var tab=window.open(url,'_blank');
-    if(!tab)toast('Libere novas abas para abrir a comanda Delivery.');
+  var originalSubmitStaffDelivery=submitStaffOrder;
+  submitStaffOrder=async function(){
+    if(draft.tableId!=='__delivery__')return originalSubmitStaffDelivery();
+    var items=Object.entries(draft.qty||{}).filter(function(x){return x[1]>0;}).map(function(x){
+      return {product_id:x[0],qty:x[1],addons:[],variant_id:null};
+    }).concat((draft.lines||[]).map(function(line){
+      return {product_id:line.product_id,qty:Math.max(1,Number(line.qty||1)),addons:line.addons||[],variant_id:line.variant_id||null};
+    }));
+    if(!items.length)return toast('Selecione pelo menos um produto.');
+    if(!(draft.customer||'').trim())return toast('Informe o nome do cliente.');
+    var phone=normalizeCustomerPhone(draft.whatsapp||'');
+    if(!phone||phone.length<12)return toast('Informe um WhatsApp válido.');
+    if((draft.address||'').trim().length<8)return toast('Informe o endereço completo para entrega.');
+    var zone=staffSelectedDeliveryNeighborhood();
+    if(staffSession.delivery_neighborhoods_configured&&!zone)return toast('Escolha o bairro para calcular a taxa de entrega.');
+    try{
+      var result=await rpc('pc_place_delivery_order',{
+        p_business_slug:staffSession.business_slug,
+        p_items:items,
+        p_notes:draft.notes||null,
+        p_customer_name:draft.customer||null,
+        p_customer_whatsapp:phone,
+        p_delivery_address:draft.address||null,
+        p_delivery_reference:draft.reference||null,
+        p_delivery_neighborhood:zone?zone.name:null
+      },false);
+      toast('Delivery #'+result.order_no+' enviado para a cozinha. Total: '+money(result.total));
+      draft={tableId:'__delivery__',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
+      view='kitchen';
+      await loadStaffOrders(true);
+    }catch(e){toast(e.message||'Erro ao enviar pedido de entrega.');}
   };
 
   console.info('Pede Comanda Delivery '+DELIVERY_VERSION+' carregado');
