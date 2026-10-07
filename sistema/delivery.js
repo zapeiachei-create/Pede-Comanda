@@ -528,6 +528,8 @@
       return {product_id:l.product_id,qty:Math.max(1,Number(l.qty||1)),addons:l.addons||[],variant_id:l.variant_id||null};
     }));
     if(!items.length)return toast('Selecione pelo menos um item.');
+    var zone=selectedDeliveryNeighborhood();
+    if(deliveryNeedsNeighborhood()&&!zone)return toast('Selecione o bairro para entrega.');
     if(!(draft.customer||'').trim())return toast('Informe seu nome.');
     var phone=normalizeCustomerPhone(draft.whatsapp||'');
     if(!phone||phone.length<12)return toast('Informe um WhatsApp válido.');
@@ -540,12 +542,13 @@
         p_customer_name:draft.customer||null,
         p_customer_whatsapp:phone,
         p_delivery_address:draft.address||null,
-        p_delivery_reference:draft.reference||null
+        p_delivery_reference:draft.reference||null,
+         p_delivery_neighborhood:zone?zone.name:null
       },false);
       draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
       document.getElementById('app').innerHTML='<div class="onboard"><div class="card" style="text-align:center"><div style="font-size:52px">🛵</div><h1>Pedido enviado!</h1>'+
         '<p>Pedido <b>#'+r.order_no+'</b> recebido pela cozinha.</p><h2>'+money(r.total)+'</h2>'+
-        '<p class="muted">Taxa de entrega: '+money(r.delivery_fee||0)+'. Acompanhe pelo WhatsApp informado caso a loja precise falar com você.</p>'+
+        '<p class="muted">'+(r.delivery_neighborhood?'Bairro: '+esc(r.delivery_neighborhood)+'. ':'')+'Taxa de entrega: '+money(r.delivery_fee||0)+'. Acompanhe pelo WhatsApp informado caso a loja precise falar com você.</p>'+
         customerPaymentHtml(r.order_no,r.total,null,true)+
         '<div style="display:grid;gap:10px;max-width:320px;margin:0 auto"><button class="btn btn-primary" onclick="renderDelivery(\''+esc(slug)+'\')">Fazer outro pedido</button><button class="btn btn-soft" onclick="location.href=\'/\'">Sair</button></div></div></div>';
     }catch(e){toast(e.message);}
