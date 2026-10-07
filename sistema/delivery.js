@@ -1,5 +1,5 @@
 (function(){
-  var DELIVERY_VERSION='20261006-2';
+  var DELIVERY_VERSION='20261007-1';
 
   function deliveryLink(){
     return 'https://pedecomanda.com.br/sistema/?loja='+encodeURIComponent(business.slug)+'&delivery=1';
@@ -117,6 +117,15 @@
     finally{if(button.isConnected){button.disabled=false;button.textContent='Salvar cadastro';}}
   };
 
+  var deliveryOriginalReload=reloadAdminData;
+  reloadAdminData=async function(){
+    await deliveryOriginalReload();
+    if(!business)return;
+    try{
+      data.deliveryNeighborhoods=await rest('pc_delivery_neighborhoods','select=id,name,fee,active,sort_order&business_id=eq.'+business.id+'&order=name.asc');
+      data.deliveryNeighborhoodsError='';
+    }catch(e){data.deliveryNeighborhoods=[];data.deliveryNeighborhoodsError=e.message||'Erro ao consultar bairros';}
+  };
   var oldTablesAdminView=tablesAdminView;
   tablesAdminView=function(){
     var base=oldTablesAdminView();
@@ -133,28 +142,105 @@
       '<div style="text-align:center"><img src="'+qr+'" alt="QR Delivery" style="width:190px;height:190px;background:#fff;padding:8px;border-radius:12px;border:1px solid var(--line)"><div class="small muted">QR do Delivery</div></div></div></div>';
   };
 
+
   var oldSettingsAdminView=settingsAdminView;
   settingsAdminView=function(){
     var base=oldSettingsAdminView();
     var enabled=business.delivery_enabled!==false;
-    return base+'<div class="card" style="margin-top:14px"><div class="page-head"><div><h2 style="margin:0">🛵 Delivery</h2><div class="muted">Ative entregas, defina a taxa e cadastre os entregadores em Equipe.</div></div></div>'+
+    var zones=data.deliveryNeighborhoods||[];
+    var list=zones.map(function(n){
+      return '<div style="display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)">'+
+        '<div><b>'+esc(n.name)+'</b> <span class="muted small">'+(n.active?'Atendido':'Desativado')+'</span><div class="muted small">Entrega: <b>'+money(n.fee)+'</b></div></div>'+
+        '<div class="toolbar"><button class="btn btn-soft btn-sm" onclick="editDeliveryNeighborhood(\''+n.id+'\')">Editar</button>'+
+        '<button class="btn btn-secondary btn-sm" onclick="toggleDeliveryNeighborhood(\''+n.id+'\','+(!n.active)+')">'+(n.active?'Desativar':'Ativar')+'</button>'+
+        '<button class="btn btn-danger btn-sm" onclick="removeDeliveryNeighborhood(\''+n.id+'\')">Excluir</button></div></div>';
+    }).join('');
+    return base+'<div class="card" style="margin-top:14px">'+
+      '<h2 style="margin-top:0">🛵 Delivery • bairros atendidos</h2>'+
+      '<p class="muted">Cada estabelecimento define os bairros onde entrega e o valor de cada entrega. O cliente escolhe o bairro e o valor entra automaticamente no pedido.</p>'+
       '<div class="grid grid-2"><div class="field"><label>Delivery</label><select id="setDeliveryEnabled"><option value="true" '+(enabled?'selected':'')+'>Ativado</option><option value="false" '+(!enabled?'selected':'')+'>Desativado</option></select></div>'+
-      '<div class="field"><label>Taxa de entrega (R$)</label><input id="setDeliveryFee" type="number" min="0" step="0.01" value="'+Number(business.delivery_fee||0).toFixed(2)+'"><div class="muted small">Use 0 para entrega grátis.</div></div></div>'+
-      '<button class="btn btn-primary" onclick="saveDeliverySettings()">Salvar Delivery</button>'+
-      '<div class="success-note" style="margin-top:14px">Fluxo: pedido recebido → preparo → pronto → escolher entregador → saiu para entrega → entregue.</div></div>';
+      '<div class="field"><label>Taxa padrão (R$)</label><input id="setDeliveryFee" type="number" min="0" step="0.01" value="'+Number(business.delivery_fee||0).toFixed(2)+'"><div class="muted small">Usada somente enquanto não houver bairros cadastrados.</div></div></div>'+
+      '<button class="btn btn-primary" onclick="saveDeliverySettings()">Salvar configurações</button>'+
+      '<hr style="border:0;border-top:1px solid var(--line);margin:20px 0">'+
+      '<h3>Cadastrar bairro e taxa</h3>'+
+      '<div class="grid grid-2"><div class="field"><label>Bairro</label><input id="deliveryZoneName" type="text" maxlength="80" placeholder="Ex.: Centro"></div>'+
+      '<div class="field"><label>Valor da entrega (R$)</label><input id="deliveryZoneFee" type="text" inputmode="decimal" placeholder="Ex.: 5,00"></div></div>'+
+      '<input id="deliveryZoneEditId" type="hidden" value="">'+
+      '<div class="toolbar"><button id="deliveryZoneSaveButton" class="btn btn-primary" onclick="saveDeliveryNeighborhood()">+ Cadastrar bairro</button>'+
+      '<button class="btn btn-secondary btn-sm" onclick="clearDeliveryNeighborhoodEdit()">Limpar</button></div>'+
+      '<p id="deliveryZoneFeedback" class="small" role="status" aria-live="polite"></p>'+
+      (data.deliveryNeighborhoodsError?'<div class="danger-note">'+esc(data.deliveryNeighborhoodsError)+'</div>':'')+
+      (list||'<div class="empty">Nenhum bairro cadastrado. Por enquanto será usada a taxa padrão.</div>')+
+      (zones.length&&zones.every(function(n){return !n.active;})?'<div class="danger-note">Ative pelo menos um bairro para aceitar pedidos por delivery.</div>':'')+
+      '</div>';
   };
   window.saveDeliverySettings=async function(){
     try{
       var enabled=document.getElementById('setDeliveryEnabled').value==='true';
-      var fee=Math.max(0,Number(String(document.getElementById('setDeliveryFee').value||'0').replace(',','.'))||0);
-      var arr=await rest('pc_businesses','id=eq.'+business.id,{
-        method:'PATCH',
-        headers:{Prefer:'return=representation'},
-        body:JSON.stringify({delivery_enabled:enabled,delivery_fee:fee})
+      var fee=Number(String(document.getElementById('setDeliveryFee').value||'0').replace(',','.'));
+      if(!Number.isFinite(fee)||fee<0)return toast('Informe uma taxa válida.');
+      var arr=await rest('pc_businesses','id=eq.'+business.id,{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({delivery_enabled:enabled,delivery_fee:Math.round(fee*100)/100})});
+      if(!Array.isArray(arr)||!arr.length)throw new Error('Não foi possível confirmar as configurações.');
+      business=arr[0];renderAdmin();toast('Configurações do Delivery salvas.');
+    }catch(e){toast(e.message);}
+  };
+  window.clearDeliveryNeighborhoodEdit=function(){
+    document.getElementById('deliveryZoneName').value='';
+    document.getElementById('deliveryZoneFee').value='';
+    document.getElementById('deliveryZoneEditId').value='';
+    document.getElementById('deliveryZoneSaveButton').textContent='+ Cadastrar bairro';
+    document.getElementById('deliveryZoneFeedback').textContent='';
+  };
+  window.editDeliveryNeighborhood=function(id){
+    var z=(data.deliveryNeighborhoods||[]).find(function(n){return n.id===id;});
+    if(!z)return;
+    document.getElementById('deliveryZoneEditId').value=z.id;
+    document.getElementById('deliveryZoneName').value=z.name;
+    document.getElementById('deliveryZoneFee').value=Number(z.fee).toFixed(2).replace('.',',');
+    document.getElementById('deliveryZoneSaveButton').textContent='Salvar alteração';
+    document.getElementById('deliveryZoneName').scrollIntoView({behavior:'smooth',block:'center'});
+  };
+  window.saveDeliveryNeighborhood=async function(){
+    var id=document.getElementById('deliveryZoneEditId').value;
+    var name=document.getElementById('deliveryZoneName').value.trim();
+    var raw=document.getElementById('deliveryZoneFee').value.trim().replace(/R\$\s*/gi,'').replace(/\s/g,'');
+    if(raw.includes(','))raw=raw.replace(/\./g,'').replace(',','.');
+    var fee=Number(raw);
+    var feedback=document.getElementById('deliveryZoneFeedback');
+    if(name.length<2){feedback.textContent='Digite um nome de bairro válido.';return;}
+    if(raw===''||!Number.isFinite(fee)||fee<0){feedback.textContent='Informe o valor da entrega (ex.: 5,00).';return;}
+    var button=document.getElementById('deliveryZoneSaveButton');button.disabled=true;feedback.textContent='Salvando...';
+    try{
+      var payload={name:name,fee:Math.round(fee*100)/100};
+      if(!id)payload.business_id=business.id;
+      var saved=await rest('pc_delivery_neighborhoods',id?'id=eq.'+id+'&business_id=eq.'+business.id:'',{
+        method:id?'PATCH':'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(payload)
       });
-      business=arr[0];
-      renderAdmin();
-      toast(enabled?'Delivery ativado e salvo.':'Delivery desativado.');
+      if(!Array.isArray(saved)||!saved.length)throw new Error('Bairro não foi salvo.');
+      await reloadAdminData();
+      if(!(data.deliveryNeighborhoods||[]).some(function(n){return n.id===saved[0].id;}))throw new Error('Não foi possível confirmar o bairro.');
+      renderAdmin();toast(id?'Bairro atualizado.':'Bairro cadastrado com taxa.');
+    }catch(e){feedback.textContent='Erro: '+(e.message||'verifique os dados');}
+    finally{if(button.isConnected)button.disabled=false;}
+  };
+  window.toggleDeliveryNeighborhood=async function(id,active){
+    try{
+      var rows=await rest('pc_delivery_neighborhoods','id=eq.'+id+'&business_id=eq.'+business.id,{
+        method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify({active:active})
+      });
+      if(!rows||!rows.length)throw new Error('Não foi possível alterar o bairro.');
+      await reloadAdminData();renderAdmin();toast(active?'Bairro ativado.':'Bairro desativado.');
+    }catch(e){toast(e.message);}
+  };
+  window.removeDeliveryNeighborhood=async function(id){
+    var z=(data.deliveryNeighborhoods||[]).find(function(n){return n.id===id;});
+    if(!z||!confirm('Excluir '+z.name+' da lista de entregas?'))return;
+    try{
+      var rows=await rest('pc_delivery_neighborhoods','id=eq.'+id+'&business_id=eq.'+business.id,{
+        method:'DELETE',headers:{Prefer:'return=representation'}
+      });
+      if(!rows||!rows.length)throw new Error('Não foi possível excluir.');
+      await reloadAdminData();renderAdmin();toast('Bairro excluído.');
     }catch(e){toast(e.message);}
   };
 
