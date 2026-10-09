@@ -457,7 +457,7 @@ function itemExtraText(i){const parts=[];if(i?.variant?.name)parts.push('Massa: 
 function orderCardAdmin(o){const next={new:['Iniciar preparo','preparing'],preparing:['Marcar pronto','ready'],ready:['Entregar','delivered']}[o.status];const main=o.channel==='counter'?`SENHA ${String(o.pickup_no||0).padStart(3,'0')} • Balcão`:`#${o.order_no} • ${tableName(o.table_id)}`;return `<article class="order-card"><div class="top"><div><b>${esc(main)}</b><div class="muted">${fmtTime(o.created_at)} • ${esc(orderOrigin(o))}</div></div>${badge(o.status)}</div><ul>${itemsOf(o.id).map(i=>`<li>${i.quantity}x ${esc(i.product_name)}${itemExtraText(i)}</li>`).join('')}</ul>${['qr','counter'].includes(o.channel)&&(o.customer_name||o.customer_whatsapp)?`<div class="muted"><b>Cliente:</b> ${esc(o.customer_name||'Não informado')}${o.customer_whatsapp?` • WhatsApp ${esc(o.customer_whatsapp)}`:''}</div>`:''}${o.notes?`<div class="muted"><b>Obs.:</b> ${esc(o.notes)}</div>`:''}<div class="inline" style="justify-content:space-between;margin-top:10px"><b>${money(o.total)}</b><div class="order-actions">${next?`<button class="btn btn-primary btn-sm" onclick="adminStatus('${o.id}','${next[1]}')">${next[0]}</button>`:''}${o.status!=='cancelled'&&o.status!=='delivered'?`<button class="btn btn-danger btn-sm" onclick="adminStatus('${o.id}','cancelled')">Cancelar</button>`:''}</div></div></article>`}
 async function adminStatus(id,status){try{await rest('pc_orders',`id=eq.${id}&business_id=eq.${business.id}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({status,updated_at:new Date().toISOString()})});await refreshOrders();}catch(e){toast(e.message)}}
 
-function menuAdminView(){return `<div class="page-head"><div><h1>Cardápio da comanda</h1><div class="muted">Cadastre produtos, opções de massa e adicionais grátis ou pagos.</div></div><button class="btn btn-primary" onclick="addCategory()">+ Categoria</button></div>${data.categories.map(c=>`<div class="card" style="margin-bottom:12px"><div class="page-head"><div><h3 style="margin:0">${esc(c.name)}</h3></div><div class="toolbar"><button class="btn btn-soft btn-sm" onclick="addProduct('${c.id}')">+ Item</button><button class="btn btn-secondary btn-sm" onclick="editCategory('${c.id}')">✏️ Editar</button><button class="btn btn-danger btn-sm" onclick="deleteCategory('${c.id}')">🗑 Excluir</button></div></div>${productRows(c.id)}</div>`).join('')||'<div class="card empty">Nenhuma categoria cadastrada.</div>'}${variantProductId?variantEditor():''}${addonProductId?addonEditor():''}`}
+function menuAdminView(){return `<div class="page-head"><div><h1>Cardápio da comanda</h1><div class="muted">Cadastre produtos, opções de massa e adicionais grátis ou pagos.</div></div><div class="toolbar"><button class="btn btn-secondary" onclick="openMenuAI()">📷 Importar cardápio com IA</button><button class="btn btn-primary" onclick="addCategory()">+ Categoria</button></div></div>${data.categories.map(c=>`<div class="card" style="margin-bottom:12px"><div class="page-head"><div><h3 style="margin:0">${esc(c.name)}</h3></div><div class="toolbar"><button class="btn btn-soft btn-sm" onclick="addProduct('${c.id}')">+ Item</button><button class="btn btn-secondary btn-sm" onclick="editCategory('${c.id}')">✏️ Editar</button><button class="btn btn-danger btn-sm" onclick="deleteCategory('${c.id}')">🗑 Excluir</button></div></div>${productRows(c.id)}</div>`).join('')||'<div class="card empty">Nenhuma categoria cadastrada.</div>'}${variantProductId?variantEditor():''}${addonProductId?addonEditor():''}`}
 function productRows(cid){const ps=data.products.filter(p=>p.category_id===cid);if(!ps.length)return '<div class="empty">Sem itens nessa categoria.</div>';return `<div class="table-wrap"><table class="table"><tbody>${ps.map(p=>{const ac=data.addons.filter(a=>a.product_id===p.id&&a.active).length;const vc=data.variants.filter(v=>v.product_id===p.id&&v.active).length;return `<tr><td><span class="pc-product-title">${p.image_url?`<img class="pc-product-thumb" src="${esc(p.image_url)}" alt="" loading="lazy" onerror="this.style.display=\'none\'">`:``}<b>${esc(p.name)}</b></span><div class="muted small">${vc?`${vc} opções/massas • `:''}${ac?`${ac} adicionais`:'Sem adicionais'}</div><button class="btn btn-danger btn-sm product-delete-visible" style="margin-top:7px" onclick="deleteProduct('${p.id}')">🗑 Excluir item</button></td><td>${money(p.price)}</td><td>${p.active?'<span class="badge b-ready">Ativo</span>':'<span class="badge b-done">Inativo</span>'}</td><td><div class="toolbar"><button class="btn btn-soft btn-sm" onclick="variantProductId='${p.id}';addonProductId=null;renderAdmin()">1. Massas/Opções</button><button class="btn btn-soft btn-sm" onclick="addonProductId='${p.id}';variantProductId=null;renderAdmin()">2. Adicionais</button><button class="btn btn-soft btn-sm" onclick="chooseProductImage('${p.id}')">🔎 Buscar imagem</button><button class="btn btn-secondary btn-sm" onclick="editProduct('${p.id}')">Editar</button></div></td></tr>`}).join('')}</tbody></table></div>`}
 function variantEditor(){
   const p=data.products.find(x=>x.id===variantProductId);
@@ -592,6 +592,66 @@ async function deleteCategory(id){
     await reloadAdminData();renderAdmin();toast('Categoria excluída.');
   }catch(e){toast(e.message)}
 }
+
+let pcMenuAIItems=[];
+function openMenuAI(){
+ document.getElementById('pcMenuAI')?.remove();
+ const el=document.createElement('div');el.id='pcMenuAI';
+ el.style.cssText='position:fixed;inset:0;background:#0009;z-index:99999;overflow:auto;padding:16px';
+ el.innerHTML='<div style="max-width:780px;margin:24px auto;background:white;color:#222;border-radius:16px;padding:20px"><div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><h2>📷 Importar cardápio com IA</h2><button class="btn btn-secondary" onclick="document.getElementById(\'pcMenuAI\').remove()">Fechar</button></div><p>Fotografe o cardápio impresso ou selecione até 6 imagens. Confira nomes e preços antes de cadastrar.</p><input id="pcMenuAIFile" type="file" accept="image/*" multiple style="width:100%;margin:12px 0"><button class="btn btn-primary" onclick="readMenuAI()">✨ Ler cardápio</button><div id="pcMenuAIStatus" class="muted" style="margin:12px 0"></div><div id="pcMenuAIReview"></div></div>';
+ document.body.appendChild(el);pcMenuAIItems=[];
+}
+async function pcMenuImage(file){
+ return new Promise((resolve,reject)=>{
+  const im=new Image(),url=URL.createObjectURL(file);
+  im.onload=()=>{
+   const scale=Math.min(1,1800/Math.max(im.width,im.height));
+   const canvas=document.createElement('canvas');canvas.width=Math.round(im.width*scale);canvas.height=Math.round(im.height*scale);
+   canvas.getContext('2d').drawImage(im,0,0,canvas.width,canvas.height);
+   URL.revokeObjectURL(url);resolve(canvas.toDataURL('image/jpeg',.82));
+  };im.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Imagem inválida'))};im.src=url;
+ });
+}
+async function readMenuAI(){
+ const files=[...(document.getElementById('pcMenuAIFile')?.files||[])],status=document.getElementById('pcMenuAIStatus');
+ if(!files.length||files.length>6){toast('Selecione de 1 a 6 imagens.');return}
+ status.textContent='Lendo cardápio com IA. Aguarde...';
+ try{
+  const images=await Promise.all(files.map(pcMenuImage));
+  const res=await fetch(SUPABASE_URL+'/functions/v1/pc-menu-ai-import',{method:'POST',headers:headers(),body:JSON.stringify({business_id:business.id,images})});
+  const payload=await res.json();if(!res.ok)throw Error(payload.error||'Erro na leitura');
+  pcMenuAIItems=(payload.items||[]).map(x=>({...x,selected:true}));
+  status.textContent=pcMenuAIItems.length+' itens encontrados. Revise antes de importar.';
+  renderMenuAIReview();
+ }catch(e){status.textContent=e.message||'Erro na leitura';toast(status.textContent)}
+}
+function renderMenuAIReview(){
+ const el=document.getElementById('pcMenuAIReview');if(!el)return;
+ if(!pcMenuAIItems.length){el.innerHTML='<p>Nenhum produto identificado. Tente uma foto mais nítida.</p>';return}
+ el.innerHTML='<p><b>Revisão dos produtos</b> — desmarque itens que não deseja importar.</p>'+pcMenuAIItems.map((x,i)=>'<div style="display:grid;grid-template-columns:28px 1fr 110px;gap:6px;margin:9px 0;align-items:center"><input type="checkbox" '+(x.selected?'checked':'')+' onchange="pcMenuAIItems['+i+'].selected=this.checked"><input aria-label="Nome do produto" value="'+esc(x.name)+'" onchange="pcMenuAIItems['+i+'].name=this.value" style="min-width:0;padding:9px;border:1px solid #ccc;border-radius:8px"><input aria-label="Preço" type="number" step="0.01" min="0" value="'+x.price+'" onchange="pcMenuAIItems['+i+'].price=Number(this.value)" style="width:100%;padding:9px;border:1px solid #ccc;border-radius:8px"><input aria-label="Categoria" value="'+esc(x.category)+'" onchange="pcMenuAIItems['+i+'].category=this.value" style="grid-column:2/4;padding:8px;border:1px solid #ddd;border-radius:8px"></div>').join('')+'<button class="btn btn-primary" onclick="importMenuAI()">✓ Confirmar e cadastrar produtos</button>';
+}
+async function importMenuAI(){
+ const selected=pcMenuAIItems.filter(x=>x.selected&&x.name.trim()&&Number.isFinite(x.price)&&x.price>=0);
+ if(!selected.length){toast('Nenhum item selecionado.');return}
+ if(!confirm('Cadastrar '+selected.length+' produtos na loja '+business.name+'?'))return;
+ const status=document.getElementById('pcMenuAIStatus');status.textContent='Cadastrando produtos...';
+ let added=0,skipped=0;
+ try{
+  for(const item of selected){
+   const categoryName=item.category.trim()||'Outros';
+   let cat=data.categories.find(c=>c.name.toLocaleLowerCase('pt-BR')===categoryName.toLocaleLowerCase('pt-BR'));
+   if(!cat){
+    const created=await rest('pc_categories','',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({business_id:business.id,name:categoryName,sort_order:data.categories.length*10+10})});
+    cat=created[0];data.categories.push(cat);
+   }
+   if(data.products.some(p=>p.category_id===cat.id&&p.name.toLocaleLowerCase('pt-BR')===item.name.trim().toLocaleLowerCase('pt-BR'))){skipped++;continue}
+   const created=await rest('pc_products','',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify({business_id:business.id,category_id:cat.id,name:item.name.trim(),price:item.price,sort_order:data.products.filter(p=>p.category_id===cat.id).length*10+10})});
+   data.products.push(created[0]);added++;
+  }
+  document.getElementById('pcMenuAI')?.remove();await reloadAdminData();renderAdmin();toast(added+' produtos cadastrados. '+skipped+' duplicados ignorados.');
+ }catch(e){status.textContent='Importação parcial: '+added+' cadastrados. '+e.message;toast(status.textContent)}
+}
+
 async function addProduct(cid){const name=prompt('Nome do item');if(!name)return;const price=Number((prompt('Preço (ex.: 12,90)')||'0').replace(',','.'));try{await rest('pc_products','',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({business_id:business.id,category_id:cid,name,price:price||0,sort_order:data.products.filter(p=>p.category_id===cid).length*10+10})});await reloadAdminData();renderAdmin()}catch(e){toast(e.message)}}
 async function chooseProductImage(id){
  const p=data.products.find(x=>x.id===id);if(!p)return;
