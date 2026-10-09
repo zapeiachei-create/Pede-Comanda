@@ -68,10 +68,10 @@ async function rpc(name,body){
     const no=parseInt(mesa.match(/\d+/)[0],10);
     try{
       const r=await rpc('pc_resolve_pretty_table',{p_business_slug:slug,p_table_no:no});
-      return openFrame('/sistema/?qr='+encodeURIComponent(r.qr_token)+'&v=20261009-subtotal2');
+      return openFrame('/sistema/?qr='+encodeURIComponent(r.qr_token)+'&v=20261009-secoes3');
     }catch(e){return fail(e.message)}
   }
-  openFrame('/sistema/?loja='+encodeURIComponent(slug)+'&v=20261009-subtotal2');
+  openFrame('/sistema/?loja='+encodeURIComponent(slug)+'&v=20261009-secoes3');
 })().catch(e=>fail(e.message));
 </script>
 </body>
