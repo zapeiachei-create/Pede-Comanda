@@ -479,11 +479,11 @@
     if(draftIsCustom(p)){
       var count=(draft.lines||[]).filter(function(l){return l.product_id===p.id;}).reduce(function(s,l){return s+Math.max(1,Number(l.qty||1));},0);
       var subtotal=(draft.lines||[]).filter(function(l){return l.product_id===p.id;}).reduce(function(s,l){return s+draftLineTotal(l);},0);
-      return '<div class="menu-row"><div><b>'+esc(p.name)+'</b><div class="muted">A partir de '+money(p.price)+'</div><div class="muted small">'+(count?count+' montado(s) no pedido':'Escolha opção e adicionais')+'</div></div>'+
+      return '<div class="menu-row"><div><span class="pc-product-title">'+(p.image_url?'<img class="pc-product-thumb" src="'+esc(p.image_url)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'')+'<b>'+esc(p.name)+'</b></span><div class="muted">A partir de '+money(p.price)+'</div><div class="muted small">'+(count?count+' montado(s) no pedido':'Escolha opção e adicionais')+'</div></div>'+
         '<div><button class="mount-btn" onclick="draftOpenConfig(\''+p.id+'\',\'delivery\')">Escolher opções</button></div><div class="price">'+(count?money(subtotal):'—')+'</div>'+draftConfigBox(p,'delivery')+'</div>';
     }
     var q=draft.qty[p.id]||0;
-    return '<div class="menu-row"><div><b>'+esc(p.name)+'</b><div class="muted">'+money(p.price)+'</div></div>'+
+    return '<div class="menu-row"><div><span class="pc-product-title">'+(p.image_url?'<img class="pc-product-thumb" src="'+esc(p.image_url)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">':'')+'<b>'+esc(p.name)+'</b></span><div class="muted">'+money(p.price)+'</div></div>'+
       '<div class="qty"><button onclick="deliveryQty(\''+p.id+'\',-1)">−</button><span>'+q+'</span><button onclick="deliveryQty(\''+p.id+'\',1)">+</button></div><div class="price">'+money(Number(p.price)*q)+'</div></div>';
   }
   window.deliveryQty=function(id,d){
