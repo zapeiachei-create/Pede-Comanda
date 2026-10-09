@@ -694,7 +694,24 @@ async function chooseProductImage(id){
  $('pc-img-query').addEventListener('keydown',e=>{if(e.key==='Enter')search()});
  $('pc-img-status').textContent='Digite o nome do produto e toque em Buscar para ver as fotos.';
 }
-async function editProduct(id){const p=data.products.find(x=>x.id===id);const name=prompt('Nome do item',p.name);if(name===null)return;const price=Number((prompt('Preço',String(p.price).replace('.',','))||String(p.price)).replace(',','.'));const description=prompt('Descrição / ingredientes (opcional)',p.description||'');if(description===null)return;const active=confirm('Deixar este item ATIVO?\nOK = ativo / Cancelar = inativo');try{await rest('pc_products',`id=eq.${id}&business_id=eq.${business.id}`,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({name,price,active,description:description.trim()})});await reloadAdminData();renderAdmin()}catch(e){toast(e.message)}}
+async function editProduct(id){
+ const p=data.products.find(x=>x.id===id);if(!p)return;
+ document.getElementById('pc-edit-product')?.remove();
+ const overlay=document.createElement('div');overlay.id='pc-edit-product';
+ overlay.style.cssText='position:fixed;inset:0;background:#0009;z-index:99999;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto';
+ overlay.innerHTML='<div style="background:white;color:#222;width:min(520px,100%);border-radius:16px;padding:20px;max-height:90vh;overflow:auto"><h2 style="margin:0 0 14px">Editar produto</h2><label style="display:block;margin:10px 0">Nome<input id="pc-edit-name" style="display:block;width:100%;box-sizing:border-box;padding:12px;margin-top:5px;border:1px solid #ccc;border-radius:9px" value="'+esc(p.name)+'"></label><label style="display:block;margin:10px 0">Preço (R$)<input id="pc-edit-price" inputmode="decimal" style="display:block;width:100%;box-sizing:border-box;padding:12px;margin-top:5px;border:1px solid #ccc;border-radius:9px" value="'+esc(String(p.price).replace(".",","))+'"></label><label style="display:block;margin:10px 0"><b>Ingredientes / descrição</b><textarea id="pc-edit-description" rows="4" placeholder="Ex.: Queijo minas, tomate e orégano" style="display:block;width:100%;box-sizing:border-box;padding:12px;margin-top:5px;border:1px solid #ccc;border-radius:9px;resize:vertical">'+esc(p.description||'')+'</textarea></label><label style="display:flex;align-items:center;gap:8px;margin:14px 0"><input type="checkbox" id="pc-edit-active" '+(p.active?'checked':'')+'> Produto ativo</label><div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap"><button class="btn btn-secondary" onclick="document.getElementById(\'pc-edit-product\').remove()">Cancelar</button><button class="btn btn-primary" id="pc-edit-save">Salvar produto</button></div><div id="pc-edit-status" class="muted small" style="margin-top:8px"></div></div>';
+ document.body.appendChild(overlay);
+ document.getElementById('pc-edit-save').onclick=async()=>{
+  const name=document.getElementById('pc-edit-name').value.trim();
+  const price=Number(document.getElementById('pc-edit-price').value.replace(',','.'));
+  const description=document.getElementById('pc-edit-description').value.trim();
+  const active=document.getElementById('pc-edit-active').checked;
+  if(!name||!Number.isFinite(price)||price<0){document.getElementById('pc-edit-status').textContent='Confira o nome e o preço.';return}
+  const btn=document.getElementById('pc-edit-save');btn.disabled=true;
+  try{await rest('pc_products','id=eq.'+id+'&business_id=eq.'+business.id,{method:'PATCH',headers:{Prefer:'return=minimal'},body:JSON.stringify({name,price,active,description})});overlay.remove();await reloadAdminData();renderAdmin();toast('Produto e ingredientes salvos.')}
+  catch(e){document.getElementById('pc-edit-status').textContent=e.message;btn.disabled=false}
+ };
+}
 
 async function deleteProduct(id){
   const p=data.products.find(x=>x.id===id);if(!p)return;
