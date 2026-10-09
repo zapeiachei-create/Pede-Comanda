@@ -1110,11 +1110,13 @@ function rerenderOrigin(origin){
 }
 function draftOpenConfig(pid,origin){draft.config={pid,variant_id:'',addons:[],qty:1,origin};rerenderOrigin(origin)}
 function draftSetVariant(vid,origin){draft.config=draft.config||{};draft.config.variant_id=vid;rerenderOrigin(origin)}
-function draftToggleAddon(aid,on,origin){draft.config=draft.config||{};const set=new Set(draft.config.addons||[]);if(on){const p=draftProduct(draft.config.pid);const a=(p?.addons||[]).find(x=>x.id===aid);const limit=Number(p?.max_free_choices||0);if(a&&Number(a.price||0)===0&&limit>0&&(p.addons||[]).filter(x=>set.has(x.id)&&Number(x.price||0)===0).length>=limit)return toast('Você pode escolher até '+limit+' ingredientes grátis.');set.add(aid)}else set.delete(aid);draft.config.addons=[...set];rerenderOrigin(origin)}
+function draftToggleAddon(aid,on,origin){draft.config=draft.config||{};const set=new Set(draft.config.addons||[]);if(on){const p=draftProduct(draft.config.pid);const a=(p?.addons||[]).find(x=>x.id===aid);const limit=Number(p?.max_free_choices||0);if(a&&Number(a.price||0)===0&&limit>0&&(p.addons||[]).filter(x=>set.has(x.id)&&Number(x.price||0)===0).length>=limit){rerenderOrigin(origin);return toast('Limite de '+limit+' ingredientes grátis. Desmarque um antes de escolher outro.');}set.add(aid)}else set.delete(aid);draft.config.addons=[...set];rerenderOrigin(origin)}
 function draftSetConfigQty(delta,origin){draft.config=draft.config||{};draft.config.qty=Math.max(1,Math.min(99,Number(draft.config.qty||1)+delta));rerenderOrigin(origin)}
 function draftAddConfigured(origin){
   const cfg=draft.config||{};const p=draftProduct(cfg.pid);if(!p)return;
   if((p.variants||[]).length&&!cfg.variant_id)return toast('Escolha primeiro a massa/opção.');
+  const selectedFree=(p.addons||[]).filter(a=>(cfg.addons||[]).includes(a.id)&&Number(a.price||0)===0).length;
+  if(Number(p.max_free_choices||0)>0&&selectedFree>Number(p.max_free_choices))return toast('Limite de ingredientes grátis excedido.');
   draft.lines=draft.lines||[];
   draft.lines.push({key:(crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random()),product_id:p.id,variant_id:cfg.variant_id||null,addons:[...(cfg.addons||[])],qty:Math.max(1,Number(cfg.qty||1))});
   draft.config={};rerenderOrigin(origin)
