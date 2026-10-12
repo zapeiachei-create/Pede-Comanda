@@ -371,8 +371,7 @@ function closeHelpCenter(){document.getElementById('pcHelpModal')?.remove()}
 function printQuickGuide(){
   const rows=helpStepRows().map(x=>`<div class="s"><b>${x[0]}. ${x[1]}</b><p>${x[2]}</p></div>`).join('');
   const w=window.open('','_blank');if(!w)return toast('Libere pop-ups para abrir o guia.');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Pede Comanda - Guia rápido</title><style>@page{size:A4;margin:16mm}body{font-family:Arial,sans-serif;color:#211d1d;line-height:1.45;max-width:780px;margin:auto}h1{color:#7b0f1b;margin-bottom:4px}.sub{color:#746b6b;margin-bottom:24px}.s{border:1px solid #eadfdb;border-radius:10px;padding:12px 14px;margin:9px 0}.s b{color:#7b0f1b}.s p{margin:4px 0 0}.support{margin-top:22px;padding:12px;background:#f7f3f1;border-radius:10px}.print{position:fixed;right:14px;top:14px;background:#7b0f1b;color:white;border:0;border-radius:9px;padding:10px 14px;font-weight:700}@media print{.print{display:none}}</style></head><body><button class="print" onclick="window.print()">Imprimir / Salvar em PDF</button><h1>Pede Comanda</h1><div class="sub">Guia rápido para configurar sua comanda digital</div>${rows}<div class="support"><b>Precisa de ajuda?</b><br>Suporte Pede Comanda pelo WhatsApp: (21) 97204-3295</div><script src="/sistema/assets/pdv-print.js"></script><script src="/sistema/assets/pdv-panel.js"></script>
-</body></html>`);
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Pede Comanda - Guia rápido</title><style>@page{size:A4;margin:16mm}body{font-family:Arial,sans-serif;color:#211d1d;line-height:1.45;max-width:780px;margin:auto}h1{color:#7b0f1b;margin-bottom:4px}.sub{color:#746b6b;margin-bottom:24px}.s{border:1px solid #eadfdb;border-radius:10px;padding:12px 14px;margin:9px 0}.s b{color:#7b0f1b}.s p{margin:4px 0 0}.support{margin-top:22px;padding:12px;background:#f7f3f1;border-radius:10px}.print{position:fixed;right:14px;top:14px;background:#7b0f1b;color:white;border:0;border-radius:9px;padding:10px 14px;font-weight:700}@media print{.print{display:none}}</style></head><body><button class="print" onclick="window.print()">Imprimir / Salvar em PDF</button><h1>Pede Comanda</h1><div class="sub">Guia rápido para configurar sua comanda digital</div>${rows}<div class="support"><b>Precisa de ajuda?</b><br>Suporte Pede Comanda pelo WhatsApp: (21) 97204-3295</div></body></html>`);
   w.document.close();
 }
 function maybeShowWelcomeTour(){
@@ -1224,4 +1223,5 @@ function clearPoll(){if(poller){clearInterval(poller);poller=null}}
   document.head.appendChild(s);
 })();
 </script>
+<script src="/sistema/assets/pdv-print.js"></script><script src="/sistema/assets/pdv-panel.js"></script>
 </body></html>
