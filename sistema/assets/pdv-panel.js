@@ -1,6 +1,16 @@
 (function(){
 "use strict";
 function opts(){try{return JSON.parse(localStorage.getItem("pc_pdv_"+business.id)||"{}")}catch(e){return {}}}
+window.pdvPrintStaff=function(id){
+try{
+const o=(staffSession&&staffSession.orders||[]).find(x=>String(x.id)===String(id));
+if(!o)return toast("Pedido não encontrado.");
+const store=staffSession.business_name||staffSession.name||business?.name||"Pede Comanda";
+const payload={storeName:store,number:o.order_no,date:new Date(o.created_at).toLocaleString("pt-BR"),table:o.table_name,customer:o.customer_name,type:o.channel,notes:o.notes,total:o.total,items:(o.items||[]).map(i=>({quantity:i.qty||i.quantity||1,name:i.name||i.product_name,total:i.total??Number(i.unit_price||i.price||0)*Number(i.qty||i.quantity||1),additions:i.addons,notes:i.notes}))};
+let width=80;try{width=JSON.parse(localStorage.getItem("pc_pdv_"+(staffSession.business_id||business?.id))||"{}").width===58?58:80}catch(e){}
+window.PedeComandaPDV.print(payload,{width});
+}catch(e){toast(e.message)}
+};
 window.pdvPrintOrder=function(id){
 try{
 const o=data.orders.find(x=>String(x.id)===String(id));
