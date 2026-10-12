@@ -160,6 +160,7 @@
   var oldSettingsAdminView=settingsAdminView;
   settingsAdminView=function(){
     var base=oldSettingsAdminView();
+    if(typeof pdvSettingsPanel==='function')base=base.replace(pdvSettingsPanel(),'');
     var enabled=business.delivery_enabled!==false;
     var zones=data.deliveryNeighborhoods||[];
     var list=zones.map(function(n){
@@ -186,7 +187,7 @@
       (data.deliveryNeighborhoodsError?'<div class="danger-note">'+esc(data.deliveryNeighborhoodsError)+'</div>':'')+
       (list||'<div class="empty">Nenhum bairro cadastrado. Por enquanto será usada a taxa padrão.</div>')+
       (zones.length&&zones.every(function(n){return !n.active;})?'<div class="danger-note">Ative pelo menos um bairro para aceitar pedidos por delivery.</div>':'')+
-      '</div>';
+      '</div>'+(typeof pdvSettingsPanel==='function'?pdvSettingsPanel():'');
   };
   window.saveDeliverySettings=async function(){
     try{
