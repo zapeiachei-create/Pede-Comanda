@@ -546,11 +546,22 @@
         p_delivery_reference:draft.reference||null,
          p_delivery_neighborhood:zone?zone.name:null
       },false);
+      var kitchenPhone=String(staffSession&&staffSession.kitchen_whatsapp||'').replace(/\D/g,'');
+      if(kitchenPhone.length===10||kitchenPhone.length===11)kitchenPhone='55'+kitchenPhone;
+      var products=(staffSession.categories||[]).flatMap(function(c){return c.products||[];});
+      var itemLines=items.map(function(item){
+        var product=products.find(function(p){return String(p.id)===String(item.product_id);});
+        return '- '+item.qty+'x '+(product?product.name:'Produto')+(item.addons&&item.addons.length?' (com adicionais)':'');
+      });
+      var orderMessage=['🛵 NOVO PEDIDO DELIVERY #'+r.order_no,'Loja: '+(staffSession.business_name||slug),'Cliente: '+draft.customer,'WhatsApp: '+phone,'Endereço: '+draft.address,zone?'Bairro: '+zone.name:'',draft.reference?'Referência: '+draft.reference:'','Itens:',itemLines.join('\n'),draft.notes?'Observações: '+draft.notes:'','Total: '+money(r.total)].filter(Boolean).join('\n');
+      var orderWhatsAppUrl=kitchenPhone?'https://wa.me/'+kitchenPhone+'?text='+encodeURIComponent(orderMessage):'';
+      window.pcLastDeliveryWhatsAppUrl=orderWhatsAppUrl;
       draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
       document.getElementById('app').innerHTML='<div class="onboard"><div class="card" style="text-align:center"><div style="font-size:52px">🛵</div><h1>Pedido enviado!</h1>'+
         '<p>Pedido <b>#'+r.order_no+'</b> recebido pela cozinha.</p><h2>'+money(r.total)+'</h2>'+
         '<p class="muted">'+(r.delivery_neighborhood?'Bairro: '+esc(r.delivery_neighborhood)+'. ':'')+'Taxa de entrega: '+money(r.delivery_fee||0)+'. Acompanhe pelo WhatsApp informado caso a loja precise falar com você.</p>'+
         customerPaymentHtml(r.order_no,r.total,null,true)+
+        (orderWhatsAppUrl?'<div style="max-width:320px;margin:12px auto"><a class="btn btn-primary btn-block" style="display:block;background:#25d366;color:#fff;text-decoration:none" href="'+esc(orderWhatsAppUrl)+'" target="_top">📲 Enviar pedido pelo WhatsApp</a></div>':'<p class="muted">A loja precisa cadastrar o WhatsApp da cozinha para receber pedidos.</p>')+
         '<div style="display:grid;gap:10px;max-width:320px;margin:0 auto"><button class="btn btn-primary" onclick="renderDelivery(\''+esc(slug)+'\')">Fazer outro pedido</button><button class="btn btn-soft" onclick="location.href=\'/\'">Sair</button></div></div></div>';
     }catch(e){toast(e.message);}
   };
