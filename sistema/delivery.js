@@ -492,6 +492,22 @@
     window.renderDelivery(currentPublicSlug);
   };
   window.deliverySelectNeighborhood=function(id){draft.neighborhoodId=id;window.renderDelivery(currentPublicSlug);};
+  function deliveryOrderSummary(){
+    var products=(staffSession.categories||[]).flatMap(function(c){return c.products||[];});
+    var regular=Object.entries(draft.qty||{}).filter(function(entry){return Number(entry[1])>0;}).map(function(entry){
+      var p=products.find(function(product){return String(product.id)===String(entry[0]);});
+      if(!p)return '';
+      return '<div class="draft-cart-line"><div><b>'+Number(entry[1])+'x '+esc(p.name)+'</b><div class="draft-cart-detail">Produto</div><b>'+money(Number(p.price)*Number(entry[1]))+'</b></div><button class="btn btn-danger btn-sm" onclick="draftRemoveRegular(\''+esc(entry[0])+'\',\'delivery\')">Remover</button></div>';
+    }).filter(Boolean);
+    var custom=(draft.lines||[]).map(function(line){
+      var p=products.find(function(product){return String(product.id)===String(line.product_id);});
+      var variant=(p&&p.variants||[]).find(function(v){return String(v.id)===String(line.variant_id);});
+      var addons=(p&&p.addons||[]).filter(function(a){return (line.addons||[]).some(function(id){return String(id)===String(a.id);});});
+      var detail=[variant?'Opção: '+variant.name:'',addons.length?'Adicionais: '+addons.map(function(a){return a.name;}).join(', '):''].filter(Boolean).join(' • ');
+      return '<div class="draft-cart-line"><div><b>'+Math.max(1,Number(line.qty||1))+'x '+esc(p?p.name:'Item')+'</b><div class="draft-cart-detail">'+esc(detail||'Sem adicionais')+'</div><b>'+money(draftLineTotal(line))+'</b></div><div style="display:flex;flex-direction:column;gap:6px"><button class="btn btn-sm" onclick="draftEditLine(\''+esc(line.key)+'\',\'delivery\')">Editar</button><button class="btn btn-danger btn-sm" onclick="draftRemoveLine(\''+esc(line.key)+'\',\'delivery\')">Remover</button></div></div>';
+    });
+    return '<div class="draft-cart"><h4>Meu pedido</h4>'+(regular.length||custom.length?regular.concat(custom).join(''):'<div class="muted small">Selecione os produtos acima para montar seu pedido.</div>')+'</div>';
+  }
   window.renderDelivery=function(slug){
     applyComandaAppearance(staffSession);
     var cats=staffSession.categories||[];
@@ -510,7 +526,7 @@
       '<main class="main"><div class="comanda-shell customer-comanda">'+comandaCoverHtml(staffSession)+
       '<div class="comanda-head"><div class="store"><div><h2 style="margin:0">🛵 Pedido para Delivery</h2><small>Receba em casa • informe seu endereço</small></div></div></div>'+
       '<div class="comanda-body">'+cats.map(function(c){return '<section class="menu-cat"><h3>'+esc(c.name)+'</h3>'+(c.products||[]).map(deliveryMenuLine).join('')+'</section>';}).join('')+
-      draftCart('delivery')+
+      deliveryOrderSummary()+
       '<div class="field"><label>Seu nome *</label><input value="'+esc(draft.customer||'')+'" oninput="draft.customer=this.value" placeholder="Ex.: João"></div>'+
       '<div class="field"><label>WhatsApp *</label><input inputmode="tel" value="'+esc(draft.whatsapp||'')+'" oninput="draft.whatsapp=this.value" placeholder="(21) 99999-9999"><div class="muted small">Usaremos este número caso a loja ou o entregador precise falar com você.</div></div>'+
       neighborhoodField+
