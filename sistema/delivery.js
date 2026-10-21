@@ -608,6 +608,7 @@
   // A comanda pública de balcão e o checkout Delivery usam o mesmo cardápio,
   // mas antes não havia um botão para trocar de modalidade.
   function publicOrderModePicker(mode){
+    if(staffSession&&staffSession.service_mode==='delivery')return '';
     var isDelivery=mode==='delivery';
     return '<section data-pc-order-mode="true" style="padding:12px 15px;background:#fff7f7;border-top:1px solid var(--line);border-bottom:1px solid var(--line)">'+
       '<b style="display:block;margin-bottom:8px">Como deseja receber seu pedido?</b>'+
@@ -634,6 +635,7 @@
   };
   window.choosePublicService=async function(mode){
     if(mode!=='counter'&&mode!=='delivery')return;
+    if(staffSession&&staffSession.service_mode==='delivery'&&mode==='counter')return toast('Esta loja atende somente por Delivery.');
     if(mode===appMode)return;
     var slug=currentPublicSlug||new URL(location.href).searchParams.get('loja');
     if(!slug)return toast('Não foi possível identificar a loja.');
