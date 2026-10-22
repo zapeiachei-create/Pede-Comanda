@@ -1,6 +1,40 @@
 (function(){
   var DELIVERY_VERSION='20261021-hours';
   var deliveryOpeningStatus=null;
+  var distanceSettings=null, distanceMode='neighborhood', distanceQuote=null, distanceError='';
+  async function distanceApi(payload,privateCall){
+    var response=await fetch('https://aajpumelbbgutmeackuu.supabase.co/functions/v1/pc-delivery-distance',{
+      method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+(privateCall&&session&&session.access_token?session.access_token:SUPABASE_KEY),'apikey':SUPABASE_KEY},
+      body:JSON.stringify(payload)
+    });
+    var json=await response.json().catch(function(){return {};});
+    if(!response.ok||json.error)throw new Error(json.error||'Não foi possível consultar o frete.');
+    return json;
+  }
+  async function loadDistanceSettings(){
+    if(!business)return;
+    try{var x=await distanceApi({action:'settings_get',business_id:business.id},true);distanceSettings=x.settings;}
+    catch(e){distanceSettings=null;console.warn('Configuração de quilometragem:',e.message);}
+  }
+  function distanceSettingsPanel(){
+    var d=distanceSettings||{mode:'neighborhood',origin_address:'',price_per_km:0,minimum_fee:0,maximum_km:null};
+    return '<div class="card" style="margin-top:14px"><h2>📍 Frete por quilometragem</h2>'+
+      '<p class="muted small">O endereço de origem é privado. A opção por bairros continua disponível.</p>'+
+      '<div class="field"><label>Forma de cálculo</label><select id="pcDistanceMode"><option value="neighborhood" '+(d.mode!=='distance'?'selected':'')+'>Por bairro</option><option value="distance" '+(d.mode==='distance'?'selected':'')+'>Por quilômetros (rota pelas ruas)</option></select></div>'+
+      '<div class="field"><label>Endereço completo da loja (não aparece ao cliente)</label><textarea id="pcDistanceOrigin" rows="2" placeholder="Rua, número, bairro, cidade, estado">'+esc(d.origin_address||'')+'</textarea></div>'+
+      '<div class="grid grid-2"><div class="field"><label>Preço por km (R$)</label><input id="pcDistancePerKm" type="number" min="0" step="0.01" value="'+Number(d.price_per_km||0)+'"></div>'+
+      '<div class="field"><label>Taxa mínima (R$)</label><input id="pcDistanceMinimum" type="number" min="0" step="0.01" value="'+Number(d.minimum_fee||0)+'"></div>'+
+      '<div class="field"><label>Distância máxima (km, opcional)</label><input id="pcDistanceMaximum" type="number" min="0.1" step="0.1" value="'+(d.maximum_km==null?'':Number(d.maximum_km))+'"></div></div>'+
+      '<button class="btn btn-primary" onclick="saveDistanceSettings()">Salvar modalidade</button></div>';
+  }
+  window.saveDistanceSettings=async function(){
+    try{
+      var settings={mode:document.getElementById('pcDistanceMode').value,origin_address:document.getElementById('pcDistanceOrigin').value.trim(),price_per_km:Number(document.getElementById('pcDistancePerKm').value),minimum_fee:Number(document.getElementById('pcDistanceMinimum').value),maximum_km:document.getElementById('pcDistanceMaximum').value||null};
+      await distanceApi({action:'settings_save',business_id:business.id,settings:settings},true);
+      await loadDistanceSettings();renderAdmin();toast('Modalidade de frete salva.');
+    }catch(e){toast(e.message);}
+  };
+
   async function refreshDeliveryOpening(slug){deliveryOpeningStatus=await rpc('pc_opening_status',{p_business_slug:slug},false);return deliveryOpeningStatus;}
 
   function deliveryLink(){
@@ -137,6 +171,7 @@
   reloadAdminData=async function(){
     await deliveryOriginalReload();
     if(!business)return;
+    await loadDistanceSettings();
     try{
       data.deliveryNeighborhoods=await rest('pc_delivery_neighborhoods','select=id,name,fee,active,sort_order&business_id=eq.'+business.id+'&order=name.asc');
       data.deliveryNeighborhoodsError='';
@@ -189,7 +224,7 @@
       (data.deliveryNeighborhoodsError?'<div class="danger-note">'+esc(data.deliveryNeighborhoodsError)+'</div>':'')+
       (list||'<div class="empty">Nenhum bairro cadastrado. Por enquanto será usada a taxa padrão.</div>')+
       (zones.length&&zones.every(function(n){return !n.active;})?'<div class="danger-note">Ative pelo menos um bairro para aceitar pedidos por delivery.</div>':'')+
-      '</div>'+(typeof pdvSettingsPanel==='function'?pdvSettingsPanel():'');
+      '</div>'+distanceSettingsPanel()+(typeof pdvSettingsPanel==='function'?pdvSettingsPanel():'');
   };
   window.saveDeliverySettings=async function(){
     try{
