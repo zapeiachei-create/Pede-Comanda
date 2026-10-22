@@ -602,7 +602,7 @@
       '<div class="card" style="box-shadow:none;background:#faf7f6;margin-top:10px"><div class="inline" style="justify-content:space-between"><span>Itens</span><b>'+money(draftTotal())+'</b></div>'+
       '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b id="pcDistanceFee">'+(distanceMode==='distance'?(distanceQuote?money(fee):'A calcular'):(configured&&!selected?'Escolha o bairro':money(fee)))+'</b></div></div>'+
       '<div class="summary"><div><span class="muted">Total com entrega</span><strong id="pcDistanceTotal">'+(distanceMode==='distance'&&!distanceQuote?'A calcular':(configured&&!selected?'A calcular':money(deliveryTotal())))+'</strong></div></div>'+
-      '<button class="send" '+(distanceMode==='distance'?'disabled title="Frete por quilômetros ainda em configuração"':((configured&&!selected&&deliveryOpeningStatus&&deliveryOpeningStatus.open)?'disabled title="Selecione seu bairro"':''))+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div><div style="padding:12px 8px 6px;text-align:center;font-size:11px;color:#847a7a;white-space:nowrap"><a href="https://pedecomanda.com.br/" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;white-space:nowrap">Desenvolvido por <strong style="font-weight:600">Pede Comanda ↗</strong></a></div></main>';
+      '<button class="send" '+((configured&&!selected&&deliveryOpeningStatus&&deliveryOpeningStatus.open)?'disabled title="Selecione seu bairro"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div><div style="padding:12px 8px 6px;text-align:center;font-size:11px;color:#847a7a;white-space:nowrap"><a href="https://pedecomanda.com.br/" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;white-space:nowrap">Desenvolvido por <strong style="font-weight:600">Pede Comanda ↗</strong></a></div></main>';
   };
   function showDeliveryClosedNotice(){
     var existing=document.getElementById('pcClosedNotice');if(existing)existing.remove();
@@ -620,7 +620,6 @@
     document.body.appendChild(el);setTimeout(function(){if(el.parentNode)el.remove()},5500);
   }
   window.submitDeliveryOrder=async function(slug){
-    if(distanceMode==='distance')return toast('O frete por quilômetros ainda está em configuração. Aguarde a liberação da loja.');
     try{var currentStatus=await refreshDeliveryOpening(slug);if(!currentStatus.open){window.renderDelivery(slug);showDeliveryClosedNotice();return;}}catch(e){return toast('Não foi possível confirmar se a loja está aberta. Tente novamente.');}
     var items=Object.entries(draft.qty).filter(function(x){return x[1]>0;}).map(function(x){
       return {product_id:x[0],qty:x[1],addons:[],variant_id:null};
@@ -628,14 +627,19 @@
       return {product_id:l.product_id,qty:Math.max(1,Number(l.qty||1)),addons:l.addons||[],variant_id:l.variant_id||null};
     }));
     if(!items.length)return toast('Selecione pelo menos um item.');
+    if(distanceMode==='distance'&&(!distanceQuote||distanceQuote.address!==(draft.address||'').trim()))return toast('Calcule o valor da entrega antes de enviar o pedido.');
     var zone=selectedDeliveryNeighborhood();
-    if(deliveryNeedsNeighborhood()&&!zone)return toast('Selecione o bairro para entrega.');
+    if(distanceMode!=='distance'&&deliveryNeedsNeighborhood()&&!zone)return toast('Selecione o bairro para entrega.');
     if(!(draft.customer||'').trim())return toast('Informe seu nome.');
     var phone=normalizeCustomerPhone(draft.whatsapp||'');
     if(!phone||phone.length<12)return toast('Informe um WhatsApp válido.');
     if((draft.address||'').trim().length<8)return toast('Informe o endereço completo para entrega.');
     try{
-      var r=await rpc('pc_place_delivery_order',{
+      var r=distanceMode==='distance'
+        ? await distanceApi({action:'place_order',slug:slug,items:items,notes:draft.notes||null,
+          customer_name:draft.customer,customer_whatsapp:phone,address:draft.address,
+          reference:draft.reference||null},false)
+        : await rpc('pc_place_delivery_order',{
         p_business_slug:slug,
         p_items:items,
         p_notes:draft.notes||null,
