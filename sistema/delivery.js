@@ -507,6 +507,8 @@
     try{
       var boot=await rpc('pc_delivery_bootstrap',{p_business_slug:currentPublicSlug},false);
       staffSession=boot;applyComandaAppearance(boot);
+      distanceMode='neighborhood';distanceQuote=null;distanceError='';
+      try{var dm=await distanceApi({action:'mode',slug:currentPublicSlug},false);distanceMode=dm.mode||'neighborhood';}catch(e){console.warn('Modalidade de entrega:',e.message);}
       try{await refreshDeliveryOpening(currentPublicSlug)}catch(e){deliveryOpeningStatus={open:false,message:'Não foi possível verificar o horário da loja. Atualize a página.'}}
       draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
       window.renderDelivery(currentPublicSlug);
@@ -551,7 +553,7 @@
     var cats=staffSession.categories||[];
     var fee=deliveryFee();
     var zones=deliveryNeighborhoods();
-    var configured=deliveryNeedsNeighborhood();
+    var configured=distanceMode==='distance'?false:deliveryNeedsNeighborhood();
     var selected=selectedDeliveryNeighborhood();
     var neighborhoodField=configured?'<div class="field"><label>Bairro de entrega *</label>'+
       (zones.length?'<select onchange="deliverySelectNeighborhood(this.value)"><option value="">Selecione seu bairro</option>'+
@@ -568,13 +570,14 @@
       '<div class="field"><label>Seu nome *</label><input value="'+esc(draft.customer||'')+'" oninput="draft.customer=this.value" placeholder="Ex.: João"></div>'+
       '<div class="field"><label>WhatsApp *</label><input inputmode="tel" value="'+esc(draft.whatsapp||'')+'" oninput="draft.whatsapp=this.value" placeholder="(21) 99999-9999"><div class="muted small">Usaremos este número caso a loja ou o entregador precise falar com você.</div></div>'+
       neighborhoodField+
+      (distanceMode==='distance'?'<div class="danger-note">Frete por quilômetros em configuração. A loja ainda não está recebendo pedidos nesta modalidade.</div>':'')+
       '<div class="field"><label>Endereço completo *</label><textarea rows="2" oninput="draft.address=this.value" placeholder="Rua, número, complemento e cidade">'+esc(draft.address||'')+'</textarea></div>'+
       '<div class="field"><label>Ponto de referência (opcional)</label><input value="'+esc(draft.reference||'')+'" oninput="draft.reference=this.value" placeholder="Ex.: portão azul, próximo à praça"></div>'+
       '<div class="field"><label>Observações do pedido</label><textarea rows="3" oninput="draft.notes=this.value" placeholder="Ex.: sem cebola...">'+esc(draft.notes||'')+'</textarea></div>'+
       '<div class="card" style="box-shadow:none;background:#faf7f6;margin-top:10px"><div class="inline" style="justify-content:space-between"><span>Itens</span><b>'+money(draftTotal())+'</b></div>'+
       '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b>'+(configured&&!selected?'Escolha o bairro':money(fee))+'</b></div></div>'+
       '<div class="summary"><div><span class="muted">Total com entrega</span><strong>'+(configured&&!selected?'A calcular':money(deliveryTotal()))+'</strong></div></div>'+
-      '<button class="send" '+((configured&&!selected&&deliveryOpeningStatus&&deliveryOpeningStatus.open)?'disabled title="Selecione seu bairro"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div><div style="padding:12px 8px 6px;text-align:center;font-size:11px;color:#847a7a;white-space:nowrap"><a href="https://pedecomanda.com.br/" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;white-space:nowrap">Desenvolvido por <strong style="font-weight:600">Pede Comanda ↗</strong></a></div></main>';
+      '<button class="send" '+(distanceMode==='distance'?'disabled title="Frete por quilômetros ainda em configuração"':((configured&&!selected&&deliveryOpeningStatus&&deliveryOpeningStatus.open)?'disabled title="Selecione seu bairro"':''))+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div><div style="padding:12px 8px 6px;text-align:center;font-size:11px;color:#847a7a;white-space:nowrap"><a href="https://pedecomanda.com.br/" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;white-space:nowrap">Desenvolvido por <strong style="font-weight:600">Pede Comanda ↗</strong></a></div></main>';
   };
   function showDeliveryClosedNotice(){
     var existing=document.getElementById('pcClosedNotice');if(existing)existing.remove();
@@ -592,6 +595,7 @@
     document.body.appendChild(el);setTimeout(function(){if(el.parentNode)el.remove()},5500);
   }
   window.submitDeliveryOrder=async function(slug){
+    if(distanceMode==='distance')return toast('O frete por quilômetros ainda está em configuração. Aguarde a liberação da loja.');
     try{var currentStatus=await refreshDeliveryOpening(slug);if(!currentStatus.open){window.renderDelivery(slug);showDeliveryClosedNotice();return;}}catch(e){return toast('Não foi possível confirmar se a loja está aberta. Tente novamente.');}
     var items=Object.entries(draft.qty).filter(function(x){return x[1]>0;}).map(function(x){
       return {product_id:x[0],qty:x[1],addons:[],variant_id:null};
