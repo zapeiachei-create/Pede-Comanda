@@ -539,6 +539,7 @@
       '<button class="send" '+(configured&&!selected?'disabled title="Selecione um bairro"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div></main>';
   };
   window.submitDeliveryOrder=async function(slug){
+    if(!await pcPublicOpen(slug))return;
     var items=Object.entries(draft.qty).filter(function(x){return x[1]>0;}).map(function(x){
       return {product_id:x[0],qty:x[1],addons:[],variant_id:null};
     }).concat((draft.lines||[]).map(function(l){
