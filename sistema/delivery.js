@@ -51,6 +51,7 @@
   }
   function deliveryNeedsNeighborhood(){return !!(staffSession&&staffSession.delivery_neighborhoods_configured);}
   function deliveryFee(){
+    if(appMode==='delivery'&&distanceMode==='distance')return distanceQuote?distanceQuote.fee:0;
     if(appMode==='delivery'&&staffSession){
       if(deliveryNeedsNeighborhood()){
         var zone=selectedDeliveryNeighborhood();
@@ -532,6 +533,30 @@
     window.renderDelivery(currentPublicSlug);
   };
   window.deliverySelectNeighborhood=function(id){draft.neighborhoodId=id;window.renderDelivery(currentPublicSlug);};
+  window.deliveryAddressChanged=function(value){
+    if(draft.address!==value){draft.address=value;distanceQuote=null;distanceError='';}
+    var fee=document.getElementById('pcDistanceFee'),total=document.getElementById('pcDistanceTotal');
+    if(fee)fee.textContent='A calcular';
+    if(total)total.textContent='A calcular';
+  };
+  window.calculateDeliveryDistance=async function(){
+    var address=(draft.address||'').trim();
+    if(address.length<12)return toast('Informe rua, número, bairro, cidade e estado.');
+    var button=document.getElementById('pcDistanceCalculate');
+    if(button){button.disabled=true;button.textContent='Calculando rota...';}
+    try{
+      var result=await distanceApi({action:'quote',slug:currentPublicSlug,address:address},false);
+      if(address!==(draft.address||'').trim())return;
+      distanceQuote={fee:Number(result.fee),address:address};
+      distanceError='';
+      var fee=document.getElementById('pcDistanceFee'),total=document.getElementById('pcDistanceTotal');
+      if(fee)fee.textContent=money(distanceQuote.fee);
+      if(total)total.textContent=money(draftTotal()+distanceQuote.fee);
+      toast('Frete calculado: '+money(distanceQuote.fee));
+    }catch(e){distanceQuote=null;distanceError=e.message;toast(e.message);}
+    finally{if(button){button.disabled=false;button.textContent='Calcular valor da entrega';}}
+  };
+
   function deliveryOrderSummary(){
     var products=(staffSession.categories||[]).flatMap(function(c){return c.products||[];});
     var regular=Object.entries(draft.qty||{}).filter(function(entry){return Number(entry[1])>0;}).map(function(entry){
@@ -570,13 +595,13 @@
       '<div class="field"><label>Seu nome *</label><input value="'+esc(draft.customer||'')+'" oninput="draft.customer=this.value" placeholder="Ex.: João"></div>'+
       '<div class="field"><label>WhatsApp *</label><input inputmode="tel" value="'+esc(draft.whatsapp||'')+'" oninput="draft.whatsapp=this.value" placeholder="(21) 99999-9999"><div class="muted small">Usaremos este número caso a loja ou o entregador precise falar com você.</div></div>'+
       neighborhoodField+
-      (distanceMode==='distance'?'<div class="danger-note">Frete por quilômetros em configuração. A loja ainda não está recebendo pedidos nesta modalidade.</div>':'')+
-      '<div class="field"><label>Endereço completo *</label><textarea rows="2" oninput="draft.address=this.value" placeholder="Rua, número, complemento e cidade">'+esc(draft.address||'')+'</textarea></div>'+
+      (distanceMode==='distance'?'<div class="muted small">Informe o endereço e consulte o valor da entrega antes de finalizar.</div>':'')+
+      '<div class="field"><label>Endereço completo *</label><textarea rows="2" oninput="deliveryAddressChanged(this.value)" placeholder="Rua, número, bairro, cidade e estado">'+esc(draft.address||'')+'</textarea></div>'+
       '<div class="field"><label>Ponto de referência (opcional)</label><input value="'+esc(draft.reference||'')+'" oninput="draft.reference=this.value" placeholder="Ex.: portão azul, próximo à praça"></div>'+
       '<div class="field"><label>Observações do pedido</label><textarea rows="3" oninput="draft.notes=this.value" placeholder="Ex.: sem cebola...">'+esc(draft.notes||'')+'</textarea></div>'+
       '<div class="card" style="box-shadow:none;background:#faf7f6;margin-top:10px"><div class="inline" style="justify-content:space-between"><span>Itens</span><b>'+money(draftTotal())+'</b></div>'+
-      '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b>'+(configured&&!selected?'Escolha o bairro':money(fee))+'</b></div></div>'+
-      '<div class="summary"><div><span class="muted">Total com entrega</span><strong>'+(configured&&!selected?'A calcular':money(deliveryTotal()))+'</strong></div></div>'+
+      '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b id="pcDistanceFee">'+(distanceMode==='distance'?(distanceQuote?money(fee):'A calcular'):(configured&&!selected?'Escolha o bairro':money(fee)))+'</b></div></div>'+
+      '<div class="summary"><div><span class="muted">Total com entrega</span><strong id="pcDistanceTotal">'+(distanceMode==='distance'&&!distanceQuote?'A calcular':(configured&&!selected?'A calcular':money(deliveryTotal())))+'</strong></div></div>'+
       '<button class="send" '+(distanceMode==='distance'?'disabled title="Frete por quilômetros ainda em configuração"':((configured&&!selected&&deliveryOpeningStatus&&deliveryOpeningStatus.open)?'disabled title="Selecione seu bairro"':''))+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div><div style="padding:12px 8px 6px;text-align:center;font-size:11px;color:#847a7a;white-space:nowrap"><a href="https://pedecomanda.com.br/" target="_blank" rel="noopener noreferrer" style="color:inherit;text-decoration:none;white-space:nowrap">Desenvolvido por <strong style="font-weight:600">Pede Comanda ↗</strong></a></div></main>';
   };
   function showDeliveryClosedNotice(){
