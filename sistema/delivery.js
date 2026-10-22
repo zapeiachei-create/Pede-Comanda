@@ -586,9 +586,36 @@
       var products=(staffSession.categories||[]).flatMap(function(c){return c.products||[];});
       var itemLines=items.map(function(item){
         var product=products.find(function(p){return String(p.id)===String(item.product_id);});
-        return '- '+item.qty+'x '+(product?product.name:'Produto')+(item.addons&&item.addons.length?' (com adicionais)':'');
+        var line='• '+item.qty+'x '+(product?product.name:'Produto');
+        var addons=(item.addons||[]).map(function(a){return typeof a==='string'?a:(a.name||a.label||a.title||'');}).filter(Boolean);
+        if(addons.length)line+='\\n   Adicionais: '+addons.join(', ');
+        return line;
       });
-      var orderMessage=['🛵 NOVO PEDIDO DELIVERY #'+r.order_no,'Loja: '+(staffSession.business_name||slug),'Cliente: '+draft.customer,'WhatsApp: '+phone,'Endereço: '+draft.address,zone?'Bairro: '+zone.name:'',draft.reference?'Referência: '+draft.reference:'','Itens:',itemLines.join('\n'),draft.notes?'Observações: '+draft.notes:'','Total: '+money(r.total)].filter(Boolean).join('\n');
+      var deliveryCharge=Number(r.delivery_fee||0);
+      var subtotal=Math.max(0,Number(r.total||0)-deliveryCharge);
+      var orderMessage=[
+        '🧾 *PEDE COMANDA*',
+        '🛵 *NOVO PEDIDO DELIVERY #'+r.order_no+'*',
+        '━━━━━━━━━━━━━━━━',
+        '🏪 *'+(staffSession.business_name||slug)+'*',
+        '',
+        '👤 *CLIENTE*',
+        '*Nome:* '+draft.customer,
+        '*WhatsApp:* '+phone,
+        '*Endereço:* '+draft.address,
+        zone?'*Bairro:* '+zone.name:'',
+        draft.reference?'*Referência:* '+draft.reference:'',
+        '',
+        '🛍️ *ITENS DO PEDIDO*',
+        itemLines.join('\\n'),
+        draft.notes?'\\n*Observações:* '+draft.notes:'',
+        '',
+        '━━━━━━━━━━━━━━━━',
+        '*Subtotal:* '+money(subtotal),
+        '*Taxa de entrega:* '+money(deliveryCharge),
+        '💰 *TOTAL: '+money(r.total)+'*',
+        '━━━━━━━━━━━━━━━━'
+      ].filter(function(v){return v!==null&&v!==undefined&&v!==false;}).join('\\n');
       var orderWhatsAppUrl=kitchenPhone?'https://wa.me/'+kitchenPhone+'?text='+encodeURIComponent(orderMessage):'';
       window.pcLastDeliveryWhatsAppUrl=orderWhatsAppUrl;
       draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
