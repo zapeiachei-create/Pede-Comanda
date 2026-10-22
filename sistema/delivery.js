@@ -597,6 +597,7 @@
       neighborhoodField+
       (distanceMode==='distance'?'<div class="muted small">Informe o endereço e consulte o valor da entrega antes de finalizar.</div>':'')+
       '<div class="field"><label>Endereço completo *</label><textarea rows="2" oninput="deliveryAddressChanged(this.value)" placeholder="Rua, número, bairro, cidade e estado">'+esc(draft.address||'')+'</textarea></div>'+
+      (distanceMode==='distance'?'<div style="margin:10px 0 16px"><button type="button" id="pcDistanceCalculate" class="btn btn-primary btn-block" style="width:100%;padding:14px" onclick="calculateDeliveryDistance()">📍 Calcular valor da entrega</button><div class="muted small" style="margin-top:6px">Informe rua, número, bairro, cidade e estado para calcular pela rota.</div></div>':'')+
       '<div class="field"><label>Ponto de referência (opcional)</label><input value="'+esc(draft.reference||'')+'" oninput="draft.reference=this.value" placeholder="Ex.: portão azul, próximo à praça"></div>'+
       '<div class="field"><label>Observações do pedido</label><textarea rows="3" oninput="draft.notes=this.value" placeholder="Ex.: sem cebola...">'+esc(draft.notes||'')+'</textarea></div>'+
       '<div class="card" style="box-shadow:none;background:#faf7f6;margin-top:10px"><div class="inline" style="justify-content:space-between"><span>Itens</span><b>'+money(draftTotal())+'</b></div>'+
