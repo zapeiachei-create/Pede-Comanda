@@ -539,7 +539,7 @@
       '<div class="card" style="box-shadow:none;background:#faf7f6;margin-top:10px"><div class="inline" style="justify-content:space-between"><span>Itens</span><b>'+money(draftTotal())+'</b></div>'+
       '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b>'+(configured&&!selected?'Escolha o bairro':money(fee))+'</b></div></div>'+
       '<div class="summary"><div><span class="muted">Total com entrega</span><strong>'+(configured&&!selected?'A calcular':money(deliveryTotal()))+'</strong></div></div>'+
-      '<button class="send" '+((configured&&!selected&&deliveryOpeningStatus&&deliveryOpeningStatus.open)?'disabled title="Selecione seu bairro"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div></main>';
+      '<button class="send" '+((configured&&!selected&&deliveryOpeningStatus&&deliveryOpeningStatus.open)?'disabled title="Selecione seu bairro"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div><div style="padding:12px 8px 6px;text-align:center;font-size:11px;color:#847a7a">Desenvolvido por <a href="https://pedecomanda.com.br/" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:4px;color:inherit;text-decoration:none;font-weight:600"><img src="/favicon.ico" alt="" width="14" height="14" style="width:14px;height:14px;object-fit:contain">Pede Comanda ↗</a></div></main>';
   };
   function showDeliveryClosedNotice(){
     var existing=document.getElementById('pcClosedNotice');if(existing)existing.remove();
