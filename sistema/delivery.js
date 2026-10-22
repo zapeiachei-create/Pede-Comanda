@@ -539,10 +539,25 @@
       '<div class="card" style="box-shadow:none;background:#faf7f6;margin-top:10px"><div class="inline" style="justify-content:space-between"><span>Itens</span><b>'+money(draftTotal())+'</b></div>'+
       '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b>'+(configured&&!selected?'Escolha o bairro':money(fee))+'</b></div></div>'+
       '<div class="summary"><div><span class="muted">Total com entrega</span><strong>'+(configured&&!selected?'A calcular':money(deliveryTotal()))+'</strong></div></div>'+
-      '<button class="send" '+((configured&&!selected||!deliveryOpeningStatus||!deliveryOpeningStatus.open)?'disabled title="Loja fechada ou bairro não selecionado"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div></main>';
+      '<button class="send" '+((configured&&!selected&&deliveryOpeningStatus&&deliveryOpeningStatus.open)?'disabled title="Selecione seu bairro"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div></main>';
   };
+  function showDeliveryClosedNotice(){
+    var existing=document.getElementById('pcClosedNotice');if(existing)existing.remove();
+    var hours=(staffSession&&staffSession.opening_hours)||null;
+    var message='Consulte os dias e horários de funcionamento informados pela loja.';
+    if(hours&&Array.isArray(hours.days)){
+      var names=['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
+      var active=hours.days.map(function(d,i){return d&&d.active?names[i]:null}).filter(Boolean);
+      var first=hours.days.find(function(d){return d&&d.active;});
+      if(active.length&&first)message='Atendimento: '+active.join(', ')+', das '+first.open+' às '+first.close+'.';
+    }else if(currentPublicSlug==='cantinho-caseiro')message='Atendimento: quarta-feira a domingo, das 18h às 22h.';
+    var el=document.createElement('div');el.id='pcClosedNotice';el.setAttribute('role','alert');
+    el.style.cssText='position:fixed;z-index:99999;left:16px;right:16px;top:20%;max-width:520px;margin:auto;padding:22px;border-radius:18px;background:#fff0f0;color:#8e1723;border:2px solid #eab7bd;box-shadow:0 12px 40px #0004;text-align:center;font-size:17px;line-height:1.5';
+    el.innerHTML='<strong style="font-size:23px">🔴 LOJA FECHADA</strong><div style="margin-top:10px">No momento não estamos recebendo pedidos.</div><div style="margin-top:10px;font-weight:700">'+esc(message)+'</div><div style="margin-top:10px">Agradecemos sua preferência! ❤️</div>';
+    document.body.appendChild(el);setTimeout(function(){if(el.parentNode)el.remove()},5500);
+  }
   window.submitDeliveryOrder=async function(slug){
-    try{var currentStatus=await refreshDeliveryOpening(slug);if(!currentStatus.open){window.renderDelivery(slug);return toast(currentStatus.message||'Loja fechada no momento.')}}catch(e){return toast('Não foi possível confirmar se a loja está aberta. Tente novamente.');}
+    try{var currentStatus=await refreshDeliveryOpening(slug);if(!currentStatus.open){window.renderDelivery(slug);showDeliveryClosedNotice();return;}}catch(e){return toast('Não foi possível confirmar se a loja está aberta. Tente novamente.');}
     var items=Object.entries(draft.qty).filter(function(x){return x[1]>0;}).map(function(x){
       return {product_id:x[0],qty:x[1],addons:[],variant_id:null};
     }).concat((draft.lines||[]).map(function(l){
