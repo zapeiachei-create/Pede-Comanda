@@ -588,7 +588,7 @@
         var product=products.find(function(p){return String(p.id)===String(item.product_id);});
         var line='• '+item.qty+'x '+(product?product.name:'Produto');
         var addons=(item.addons||[]).map(function(a){return typeof a==='string'?a:(a.name||a.label||a.title||'');}).filter(Boolean);
-        if(addons.length)line+='\\n   Adicionais: '+addons.join(', ');
+        if(addons.length)line+='\n   Adicionais: '+addons.join(', ');
         return line;
       });
       var deliveryCharge=Number(r.delivery_fee||0);
@@ -607,15 +607,15 @@
         draft.reference?'*Referência:* '+draft.reference:'',
         '',
         '🛍️ *ITENS DO PEDIDO*',
-        itemLines.join('\\n'),
-        draft.notes?'\\n*Observações:* '+draft.notes:'',
+        itemLines.join('\n'),
+        draft.notes?'\n*Observações:* '+draft.notes:'',
         '',
         '━━━━━━━━━━━━━━━━',
         '*Subtotal:* '+money(subtotal),
         '*Taxa de entrega:* '+money(deliveryCharge),
         '💰 *TOTAL: '+money(r.total)+'*',
         '━━━━━━━━━━━━━━━━'
-      ].filter(function(v){return v!==null&&v!==undefined&&v!==false;}).join('\\n');
+      ].filter(function(v){return v!==null&&v!==undefined&&v!==false;}).join('\n');
       var orderWhatsAppUrl=kitchenPhone?'https://wa.me/'+kitchenPhone+'?text='+encodeURIComponent(orderMessage):'';
       window.pcLastDeliveryWhatsAppUrl=orderWhatsAppUrl;
       draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
