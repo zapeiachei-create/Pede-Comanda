@@ -71,7 +71,7 @@ async function rpc(name,body){
       return openFrame('/sistema/?qr='+encodeURIComponent(r.qr_token)+'&v=20261009-editar1');
     }catch(e){return fail(e.message)}
   }
-  openFrame('/sistema/?loja='+encodeURIComponent(slug)+(slug==='cantinho-caseiro'?'&delivery=1':'')+'&v=20261021-hours2');
+  openFrame('/sistema/?loja='+encodeURIComponent(slug)+(slug==='cantinho-caseiro'?'&delivery=1':'')+'&v=20261021-closed-notice3');
 })().catch(e=>fail(e.message));
 </script>
 </body>
