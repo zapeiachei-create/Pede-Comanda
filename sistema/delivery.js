@@ -1,5 +1,7 @@
 (function(){
-  var DELIVERY_VERSION='20261007-3';
+  var DELIVERY_VERSION='20261021-hours';
+  var deliveryOpeningStatus=null;
+  async function refreshDeliveryOpening(slug){deliveryOpeningStatus=await rpc('pc_opening_status',{p_business_slug:slug},false);return deliveryOpeningStatus;}
 
   function deliveryLink(){
     return 'https://pedecomanda.com.br/sistema/?loja='+encodeURIComponent(business.slug)+'&delivery=1';
@@ -470,6 +472,7 @@
     try{
       var boot=await rpc('pc_delivery_bootstrap',{p_business_slug:currentPublicSlug},false);
       staffSession=boot;applyComandaAppearance(boot);
+      try{await refreshDeliveryOpening(currentPublicSlug)}catch(e){deliveryOpeningStatus={open:false,message:'Não foi possível verificar o horário da loja. Atualize a página.'}}
       draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
       window.renderDelivery(currentPublicSlug);
     }catch(e){
@@ -525,7 +528,7 @@
       '<div class="brandtxt"><strong>'+esc(staffSession.business_name)+'</strong><small>Pede Comanda • Delivery</small></div></div></header>'+
       '<main class="main"><div class="comanda-shell customer-comanda">'+comandaCoverHtml(staffSession)+
       '<div class="comanda-head"><div class="store"><div><h2 style="margin:0">🛵 Pedido para Delivery</h2><small>Receba em casa • informe seu endereço</small></div></div></div>'+
-      '<div class="comanda-body">'+cats.map(function(c){return '<section class="menu-cat"><h3>'+esc(c.name)+'</h3>'+(c.products||[]).map(deliveryMenuLine).join('')+'</section>';}).join('')+
+      '<div class="comanda-body">'+(deliveryOpeningStatus?'<div style="padding:14px;margin:12px 0;border-radius:12px;background:'+(deliveryOpeningStatus.open?'#e9f8ef':'#fff0ef')+';color:'+(deliveryOpeningStatus.open?'#166534':'#991b1b')+';font-weight:700">'+(deliveryOpeningStatus.open?'🟢 LOJA ABERTA':'🔴 LOJA FECHADA')+'<div style="font-size:14px;font-weight:400;margin-top:4px">'+esc(deliveryOpeningStatus.message||'')+'</div></div>':'')+cats.map(function(c){return '<section class="menu-cat"><h3>'+esc(c.name)+'</h3>'+(c.products||[]).map(deliveryMenuLine).join('')+'</section>';}).join('')+
       deliveryOrderSummary()+
       '<div class="field"><label>Seu nome *</label><input value="'+esc(draft.customer||'')+'" oninput="draft.customer=this.value" placeholder="Ex.: João"></div>'+
       '<div class="field"><label>WhatsApp *</label><input inputmode="tel" value="'+esc(draft.whatsapp||'')+'" oninput="draft.whatsapp=this.value" placeholder="(21) 99999-9999"><div class="muted small">Usaremos este número caso a loja ou o entregador precise falar com você.</div></div>'+
@@ -536,9 +539,10 @@
       '<div class="card" style="box-shadow:none;background:#faf7f6;margin-top:10px"><div class="inline" style="justify-content:space-between"><span>Itens</span><b>'+money(draftTotal())+'</b></div>'+
       '<div class="inline" style="justify-content:space-between;margin-top:7px"><span>Taxa de entrega</span><b>'+(configured&&!selected?'Escolha o bairro':money(fee))+'</b></div></div>'+
       '<div class="summary"><div><span class="muted">Total com entrega</span><strong>'+(configured&&!selected?'A calcular':money(deliveryTotal()))+'</strong></div></div>'+
-      '<button class="send" '+(configured&&!selected?'disabled title="Selecione um bairro"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div></main>';
+      '<button class="send" '+((configured&&!selected||!deliveryOpeningStatus||!deliveryOpeningStatus.open)?'disabled title="Loja fechada ou bairro não selecionado"':'')+' onclick="submitDeliveryOrder(\''+esc(slug)+'\')">Pedir para entregar em casa</button></div></div></main>';
   };
   window.submitDeliveryOrder=async function(slug){
+    try{var currentStatus=await refreshDeliveryOpening(slug);if(!currentStatus.open){window.renderDelivery(slug);return toast(currentStatus.message||'Loja fechada no momento.')}}catch(e){return toast('Não foi possível confirmar se a loja está aberta. Tente novamente.');}
     var items=Object.entries(draft.qty).filter(function(x){return x[1]>0;}).map(function(x){
       return {product_id:x[0],qty:x[1],addons:[],variant_id:null};
     }).concat((draft.lines||[]).map(function(l){
