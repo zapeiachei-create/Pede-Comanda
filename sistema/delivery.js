@@ -594,28 +594,24 @@
       var deliveryCharge=Number(r.delivery_fee||0);
       var subtotal=Math.max(0,Number(r.total||0)-deliveryCharge);
       var orderMessage=[
-        '🧾 *PEDE COMANDA*',
-        '🛵 *NOVO PEDIDO DELIVERY #'+r.order_no+'*',
-        '━━━━━━━━━━━━━━━━',
+        '🧾 *PEDIDO #'+r.order_no+' • DELIVERY*',
         '🏪 *'+(staffSession.business_name||slug)+'*',
-        '',
+        '──────────',
         '👤 *CLIENTE*',
         '*Nome:* '+draft.customer,
         '*WhatsApp:* '+phone,
         '*Endereço:* '+draft.address,
         zone?'*Bairro:* '+zone.name:'',
         draft.reference?'*Referência:* '+draft.reference:'',
-        '',
-        '🛍️ *ITENS DO PEDIDO*',
+        '──────────',
+        '🛍️ *PRODUTOS*',
         itemLines.join('\n'),
-        draft.notes?'\n*Observações:* '+draft.notes:'',
-        '',
-        '━━━━━━━━━━━━━━━━',
-        '*Subtotal:* '+money(subtotal),
-        '*Taxa de entrega:* '+money(deliveryCharge),
-        '💰 *TOTAL: '+money(r.total)+'*',
-        '━━━━━━━━━━━━━━━━'
-      ].filter(function(v){return v!==null&&v!==undefined&&v!==false;}).join('\n');
+        draft.notes?'*Observações:* '+draft.notes:'',
+        '──────────',
+        '*Itens:* '+money(subtotal),
+        '*Entrega:* '+money(deliveryCharge),
+        '💰 *TOTAL: '+money(r.total)+'*'
+      ].filter(Boolean).join('\n');
       var orderWhatsAppUrl=kitchenPhone?'https://wa.me/'+kitchenPhone+'?text='+encodeURIComponent(orderMessage):'';
       window.pcLastDeliveryWhatsAppUrl=orderWhatsAppUrl;
       draft={tableId:'',qty:{},addons:{},lines:[],config:{},notes:'',customer:'',whatsapp:'',address:'',reference:'',neighborhoodId:''};
